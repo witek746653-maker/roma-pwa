@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>Распределение официантов — мобильная версия</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="icon-192.png">
+
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc; --badge:#fde047; --badgeText:#1f2937 }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -85,13 +91,26 @@
         <input id="date" type="date" />
         <span id="shiftBadge" class="badge" title="Считается автоматически">👥 В смене: —</span>
       </div>
+
+      <!-- новые кнопки: Undo/Redo, Экспорт/Импорт, Установить -->
+      <button id="undoBtn" class="btn" title="Отменить (Undo)">↶ Отменить</button>
+      <button id="redoBtn" class="btn" title="Повторить (Redo)">↷ Повторить</button>
+
       <button id="addWaiter" class="btn btn-acc">Добавить официанта</button>
+
       <button id="shareWA" class="btn btn-acc" title="Отправить в WhatsApp">WhatsApp</button>
       <button id="shareTG" class="btn btn-acc" title="Отправить в Telegram">Telegram</button>
       <button id="shareMail" class="btn btn-acc" title="Отправить на Email">Email</button>
+
       <button id="copy" class="btn">Копировать</button>
+
+      <button id="exportBtn" class="btn">Экспорт</button>
+      <button id="importBtn" class="btn">Импорт</button>
+      <input id="importFile" type="file" accept="application/json" style="display:none">
+
       <button id="resetDay" class="btn btn-danger">Очистить</button>
       <button id="statsBtn" class="btn" title="Статистика за месяц">📊 Статистика</button>
+      <button id="installBtn" class="btn" title="Установить как приложение" style="display:none">Установить</button>
     </div>
 
     <div class="center" id="banquetBar" aria-label="Банкеты"></div>
@@ -165,27 +184,16 @@ function showOK(){ var el=document.getElementById('okbar'); if(el) el.style.disp
 
 /* ====== данные ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v10';
+const STORAGE_KEY='rota-compact-v11';
 const MAX_AGE_DAYS=60; // 2 месяца
+const HISTORY_LIMIT=100; // глубина undo
 
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 
 const HALL_ICONS={ 'Основной зал':'🏛️','Малый (банкетный) зал':'🪑','ВИП-комнаты':'👑','Веранда':'🌿','Лофт':'🏠','Винная комната':'🍷' };
 const POS_ICONS={
-  'Зона окна':'🪟',
-  '5-я линия':'📚',
-  'Столы 7, 8, 9':'☕️',
-  'Столы 10, 11, 12':'🍽️',
-  'Подиум':'🪜',
-  'МБЗ':'🪑',
-  'Большой ВИП':'🔥',
-  'Малый ВИП':'📚',
-  'Каюта':'⚓',
-  'Лиенда':'💧',
-  'Веранда 1':'🌿',
-  'Веранда 2':'🚬', /* сигара */
-  'Лофт':'🧱',
-  'Винная комната':'🍷'
+  'Зона окна':'🪟','5-я линия':'📚','Столы 7, 8, 9':'☕️','Столы 10, 11, 12':'🍽️','Подиум':'🪜',
+  'МБЗ':'🪑','Большой ВИП':'🔥','Малый ВИП':'📚','Каюта':'⚓','Лиенда':'💧','Веранда 1':'🌿','Веранда 2':'🚬','Лофт':'🧱','Винная комната':'🍷'
 };
 
 const CANON_HALLS=[
@@ -205,8 +213,38 @@ function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new 
 function dateKey(){return $('#date').value || todayISO();}
 function weekdayRU(iso){ const d=new Date(iso+'T00:00'); const w=['вс','пн','вт','ср','чт','пт','сб']; return w[d.getDay()]; }
 function fmtDateRU(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y} (${weekdayRU(iso)})`; }
+function deepCopy(x){ return JSON.parse(JSON.stringify(x)); }
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+/* ====== история (Undo/Redo) ====== */
+const history={undo:[], redo:[]};
+function pushHistory(){ // сохраняем СТАРОЕ состояние перед изменением
+  history.undo.push(JSON.stringify(db));
+  if(history.undo.length>HISTORY_LIMIT) history.undo.shift();
+  history.redo.length=0;
+  updateUndoRedoButtons();
+}
+function undo(){
+  if(!history.undo.length) return;
+  history.redo.push(JSON.stringify(db));
+  const prev=history.undo.pop();
+  db=JSON.parse(prev);
+  save(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
+}
+function redo(){
+  if(!history.redo.length) return;
+  history.undo.push(JSON.stringify(db));
+  const next=history.redo.pop();
+  db=JSON.parse(next);
+  save(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
+}
+function updateUndoRedoButtons(){
+  $('#undoBtn').disabled = history.undo.length===0;
+  $('#redoBtn').disabled = history.redo.length===0;
+}
+
+/* ====== очистка старых данных ====== */
 function purgeOldData(){
   const now = new Date(todayISO()+'T00:00');
   ['assignments','notes','banquets','shiftSize'].forEach(key=>{
@@ -224,7 +262,7 @@ function buildDB(){
   return {
     halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
     waiters: uniq,
-    metaShifts: { primary:[...DEFAULT_PRIMARY], secondary:[...DEFAULT_SECONDARY] }, // сохраняем смены
+    metaShifts: { primary:[...DEFAULT_PRIMARY], secondary:[...DEFAULT_SECONDARY] },
     assignments:{}, notes:{}, banquets:{}, shiftSize:{}
   };
 }
@@ -237,8 +275,8 @@ function dayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}
 function ensureSlot(hid,pid){const a=dayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
 function notesForDay(){const k=dateKey(); if(!db.notes[k]) db.notes[k]={}; return db.notes[k];}
 function getNotes(wid){const m=notesForDay(); return m[wid]||(m[wid]=[])}
-function addNote(wid,t){const a=getNotes(wid); if(!a.includes(t)) a.push(t); save()}
-function delNote(wid,i){const a=getNotes(wid); a.splice(i,1); save()}
+function addNote(wid,t){pushHistory(); const a=getNotes(wid); if(!a.includes(t)) a.push(t); save()}
+function delNote(wid,i){pushHistory(); const a=getNotes(wid); a.splice(i,1); save()}
 function waiterById(id){return db.waiters.find(w=>w.id===id)}
 function waiterIdByName(name){return db.waiters.find(w=>w.name===name)?.id}
 function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
@@ -287,13 +325,13 @@ function renderWaiterChip(w, isSecondary=false){
   chip.querySelector('.del').addEventListener('click',e=>{
     e.stopPropagation();
     if(!confirm(`Удалить «${w.name}»?`)) return;
+    pushHistory();
     for(const day in db.assignments){
       const halls=db.assignments[day];
       for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid]=(halls[hid][pid]||[]).filter(x=>!(x.k==='w'&&x.id===w.id)); } }
     }
     for(const day in db.notes){ if(db.notes[day]) delete db.notes[day][w.id]; }
     db.waiters=db.waiters.filter(x=>x.id!==w.id);
-    // удаляем имя из списков смен
     db.metaShifts.primary=db.metaShifts.primary.filter(n=>n!==w.name);
     db.metaShifts.secondary=db.metaShifts.secondary.filter(n=>n!==w.name);
     if(selected && selected.k==='w' && selected.id===w.id) selected=null;
@@ -307,7 +345,6 @@ function renderWaiters(){
   const rowP=$('#rowPrimary'), rowS=$('#rowSecondary');
   rowP.innerHTML=''; rowS.innerHTML='';
 
-  // убедимся, что все waiters присутствуют в одной из смен
   db.waiters.forEach(w=>{
     if(!db.metaShifts.primary.includes(w.name) && !db.metaShifts.secondary.includes(w.name)){
       db.metaShifts.primary.push(w.name);
@@ -344,6 +381,7 @@ function renderBanquetBar(){
   });
 }
 function deleteBanquet(id){
+  pushHistory();
   const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
   const ass=dayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
   if(selected && selected.k==='b' && selected.id===id) selected=null;
@@ -393,7 +431,7 @@ function mountHall(h,into){
           slot.appendChild(el);
         }else{
           const b=banquetById(ent.id); if(!b) return;
-          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
+          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUЕТ_TYPES[b.type]||'Банкет');
           const label=`${title} · ${b.people}`;
           const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
           slot.appendChild(el);
@@ -404,6 +442,7 @@ function mountHall(h,into){
     };
 
     function assign(hid,pid,ent){
+      pushHistory();
       const arr=ensureSlot(hid,pid);
       if(arr.some(x=>x.k===ent.k && x.id===ent.id)) return;
       if(ent.k==='w'){
@@ -415,6 +454,7 @@ function mountHall(h,into){
       arr.push(ent); save(); draw();
     }
     function removeEnt(hid,pid,ent){
+      pushHistory();
       const arr=ensureSlot(hid,pid); const i=arr.findIndex(x=>x.k===ent.k && x.id===ent.id);
       if(i>-1) arr.splice(i,1); save();
     }
@@ -527,12 +567,11 @@ function openCommentsModal(wid, wname){
   redraw();
 }
 
-/* ====== банкет: модалка (с выбором места) ====== */
+/* ====== банкет: модалка с выбором места ====== */
 function openBanquetModal(existing){
   const isEdit=!!existing;
   const wrap=document.createElement('div'); wrap.className='modal';
 
-  // собираем список мест
   const placeOptions = db.halls.map(h=>{
     const opts = h.positions.map(p=>`<option value="${h.id}|${p.id}">${h.name} — ${p.name}</option>`).join('');
     return `<optgroup label="${h.name}">${opts}</optgroup>`;
@@ -561,6 +600,7 @@ function openBanquetModal(existing){
 
   wrap.querySelector('#bnSave').onclick=()=>{
     const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите число персон.');
+    pushHistory();
     let b;
     if(isEdit){
       existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim();
@@ -570,7 +610,6 @@ function openBanquetModal(existing){
       banquetsForDay().push(b);
     }
 
-    // если выбрано место — добавляем банкет в соответствующую позицию
     if(place.value){
       const [hid,pid]=place.value.split('|');
       const arr=ensureSlot(hid,pid);
@@ -583,21 +622,21 @@ function openBanquetModal(existing){
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
 }
 
-/* ====== вспомогательные ====== */
+/* ====== служебные ====== */
 function fillPick(selectEl){
   selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
   db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
 }
 function renderShiftAndTotals(){ updateAllHallTotals(); renderShiftBadge(); }
 
-/* ====== экспорт (WA/TG/Email общий текст) ====== */
+/* ====== экспорт отчёта (WA/TG/Email общий текст) ====== */
 function exportTextWhatsApp(){
   const iso = dateKey();
   const n = uniqueWaitersAll().size;
   const lines = [
     'Добрый день, друзья!',
     `📅 ${fmtDateRU(iso)}`,
-    `В смене ${n} человек(а). 🕺`,
+    `В смене ${n} человек. 🕺`,
     ''
   ];
   const b = banquetsForDay();
@@ -641,13 +680,44 @@ function exportTextWhatsApp(){
 function exportTextTelegram(){ return exportTextWhatsApp(); }
 function exportTextEmail(){ return exportTextWhatsApp(); }
 
+/* ====== Экспорт/Импорт базы ====== */
+function exportDB(){
+  const dataStr = JSON.stringify(db, null, 2);
+  const blob = new Blob([dataStr], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  a.href=url; a.download=`rota-backup-${stamp}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+function importDB(file){
+  const reader=new FileReader();
+  reader.onload = ()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      // минимальная проверка структуры
+      if(!obj || !obj.halls || !obj.waiters || !obj.assignments) throw new Error('Неверный формат файла');
+      pushHistory();
+      db = obj;
+      purgeOldData(); save(); renderAll(); renderShiftAndTotals();
+      alert('Импорт завершён');
+    }catch(e){
+      alert('Ошибка импорта: '+e.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
 /* ====== сброс дня ====== */
 function resetCurrentDate(){
+  pushHistory();
   const k=dateKey();
   db.assignments[k]={};
   db.notes[k]={};
   db.banquets[k]=[];
   delete db.shiftSize[k];
+  save();
 }
 
 /* ====== статистика ====== */
@@ -705,14 +775,34 @@ function renderAll(){
   renderColumns();
 }
 
+/* ====== PWA: регистрация SW и кнопка установки ====== */
+let deferredPrompt=null;
+function registerSW(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+}
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  const b=$('#installBtn'); if(b) b.style.display='inline-block';
+});
+function installApp(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.finally(()=>{ deferredPrompt=null; $('#installBtn').style.display='none'; });
+}
+
 /* ====== init ====== */
 document.addEventListener('DOMContentLoaded', function(){
   showOK();
+  registerSW();
 
   const dateEl=document.getElementById('date');
   dateEl.value = dateEl.value || todayISO();
   renderAll();
   renderShiftAndTotals();
+  updateUndoRedoButtons();
 
   dateEl.addEventListener('change', ()=>{ renderAll(); renderShiftAndTotals(); });
 
@@ -722,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('toggleSecondary').textContent=open?'2-я смена ↑':'2-я смена ↓';
   });
 
-  // ДОБАВИТЬ ОФИЦИАНТА (с выбором смены)
+  // Добавить официанта (с выбором смены)
   document.getElementById('addWaiter').addEventListener('click',()=>{
     const wrap=document.createElement('div'); wrap.className='modal';
     wrap.innerHTML='<div class="dialog">'+
@@ -736,11 +826,10 @@ document.addEventListener('DOMContentLoaded', function(){
     wrap.querySelector('#wSave').onclick=()=>{
       const name=(input.value||'').trim(); if(!name) return;
       if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже существует.');
+      pushHistory();
       db.waiters.push({id:UUID(), name});
       if(sel.value==='2'){
-        // в 2-ю смену
         db.metaShifts.secondary.push(name);
-        // и на всякий случай удалить из 1-й, если вдруг было
         db.metaShifts.primary = db.metaShifts.primary.filter(n=>n!==name);
       }else{
         db.metaShifts.primary.push(name);
@@ -753,12 +842,23 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(()=>input.focus(),0);
   });
 
-  // копировать
+  // Undo/Redo
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
+
+  // Экспорт/Импорт
+  document.getElementById('exportBtn').addEventListener('click', exportDB);
+  document.getElementById('importBtn').addEventListener('click', ()=> $('#importFile').click() );
+  document.getElementById('importFile').addEventListener('change', (e)=>{
+    const f=e.target.files && e.target.files[0];
+    if(f) importDB(f);
+    e.target.value='';
+  });
+
+  // копировать и шаринг
   document.getElementById('copy').addEventListener('click', async ()=>{
     const txt=exportTextWhatsApp(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
   });
-
-  // WhatsApp
   document.getElementById('shareWA').addEventListener('click', ()=>{
     const text = exportTextWhatsApp();
     const urlWeb = 'https://wa.me/?text=' + encodeURIComponent(text);
@@ -766,15 +866,11 @@ document.addEventListener('DOMContentLoaded', function(){
     const a = document.createElement('a'); a.href=urlApp; document.body.appendChild(a); a.click();
     setTimeout(()=>{ window.open(urlWeb, '_blank'); a.remove(); }, 300);
   });
-
-  // Telegram
   document.getElementById('shareTG').addEventListener('click', ()=>{
     const text = exportTextTelegram();
     const url = 'https://t.me/share/url?text=' + encodeURIComponent(text);
     window.open(url, '_blank');
   });
-
-  // Email
   document.getElementById('shareMail').addEventListener('click', ()=>{
     const text = exportTextEmail();
     const subj = 'Распределение — ' + fmtDateRU(dateKey());
@@ -785,11 +881,14 @@ document.addEventListener('DOMContentLoaded', function(){
   // очистить день
   document.getElementById('resetDay').addEventListener('click',()=>{
     if(!confirm('Очистить все данные на выбранную дату?')) return;
-    resetCurrentDate(); save(); renderAll(); renderShiftAndTotals();
+    resetCurrentDate(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
   });
 
   // статистика
   document.getElementById('statsBtn').addEventListener('click', openStatsModal);
+
+  // установка PWA
+  document.getElementById('installBtn').addEventListener('click', installApp);
 });
 })();
 </script>
