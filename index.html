@@ -4,14 +4,24 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="format-detection" content="telephone=no" />
-<title>Распределение — v21 SAFE (без кэша)</title>
+<title>Распределение — v20 auto-update</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#6b7280; --accent:#2563eb; --border:#e5e7eb; --panel:#f8fafc; --danger:#ef4444; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{height:100%; width:100%}
   body{margin:0; font:13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Noto Sans,sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden}
-  .header{position:sticky; top:0; z-index:10; display:grid; grid-template-columns:1fr; gap:8px; padding:10px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.98); backdrop-filter:saturate(1.05) blur(2px)}
+
+  .header{ position:sticky; top:0; z-index:10; display:grid; grid-template-columns:1fr; gap:8px;
+    padding:10px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.98); backdrop-filter:saturate(1.05) blur(2px) }
   @media (min-width:900px){ .header{ grid-template-columns:auto 1fr auto; align-items:start } }
+
   .left{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
   label{font-size:11px; color:var(--muted)}
   .field{display:flex; flex-direction:column; gap:4px}
@@ -21,12 +31,15 @@
   .btn-acc{border-color:rgba(37,99,235,.35)}
   .btn-danger{border-color:rgba(239,68,68,.45); color:#b91c1c}
   .btn-link{border:none; background:transparent; color:#2563eb; text-decoration:underline; padding:0 6px}
+
   .center{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center}
   .b-chip{border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fff; display:inline-flex; gap:6px; align-items:center; font-weight:700; font-size:13px; cursor:pointer; max-width:100%}
+  .b-chip.active{outline:2px solid rgba(37,99,235,.25)}
   .b-dot{width:12px;height:12px;border-radius:999px;border:1px solid #0002; flex:0 0 auto}
   .b-actions{display:inline-flex; gap:4px}
   .icon-btn{border:1px solid var(--border); background:#fff; border-radius:7px; padding:4px 6px; font-size:12px}
   .b-add{margin-left:4px}
+
   .waiters{ display:grid; grid-auto-flow:column; grid-template-rows:repeat(2,auto); gap:6px 8px; overflow-x:auto; padding-bottom:2px; justify-items:start; -webkit-overflow-scrolling:touch; max-width:100% }
   .chip{border:1px solid #c7d2fe; border-radius:999px; padding:6px 10px; background:#eef2ff; color:#0b1e4a; display:inline-flex; align-items:center; gap:6px; max-width:100%}
   .chip .name{font-weight:800; font-size:13px}
@@ -34,20 +47,24 @@
   .chip .edit{border:1px solid var(--border); border-radius:8px; padding:2px 6px; background:#fff; font-size:12px}
   .chip .del{border:none; background:transparent; color:#991b1b; font-weight:900; font-size:16px; line-height:1; padding:0 4px; cursor:pointer}
   .chip.active{outline:2px solid rgba(37,99,235,.25)}
+
   .columns{display:grid; gap:10px; padding:10px; max-width:100%}
   @media (min-width:1000px){ .columns{ grid-template-columns:repeat(3,1fr) } }
   @media (max-width:999px){ .columns{ grid-template-columns:1fr } }
+
   details.panel{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px; overflow:hidden}
   summary{list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px}
   summary::-webkit-details-marker{display:none}
   .hall-ico{font-size:15px}
   .hall-title{font-weight:900; font-size:14px; margin:0}
+
   .pos-grid{display:grid; grid-template-columns:1fr; gap:10px; margin-top:8px}
   .pos-card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px}
   .pos-head{display:flex; align-items:center; gap:8px}
   .pos-ico{font-size:14px}
   .pos-title{font-weight:800; font-size:13px}
   .muted{color:var(--muted); font-size:12px}
+
   .slot{ display:flex; flex-wrap:wrap; gap:8px; border:2px dashed #e2e8f0; border-radius:10px; padding:8px; min-height:44px; width:100% }
   .slot.highlight{border-color:var(--accent)}
   .assign{ display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fafafa; flex:1 1 calc(50% - 8px); min-width:140px; max-width:100% }
@@ -57,9 +74,22 @@
   .assign .w-note{font-size:11px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .assign .x{margin-left:auto; border:none; background:transparent; color:#991b1b; font-weight:900; font-size:16px; line-height:1; cursor:pointer; padding:0 4px}
   .assign .x:active{transform:scale(.9)}
-  /* Error console */
-  #err{position:fixed;right:8px;bottom:8px;left:8px;background:#fff;border:1px solid #fca5a5;color:#7f1d1d;padding:8px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.08);font-size:12px;display:none;z-index:99;white-space:pre-wrap;max-height:40vh;overflow:auto}
-  #err.show{display:block}
+
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.28); display:flex; align-items:center; justify-content:center; padding:12px; z-index:40}
+  .dialog{background:#fff; border:1px solid var(--border); border-radius:14px; width:min(560px,96vw); padding:12px; display:flex; flex-direction:column; gap:10px}
+  .row{display:flex; gap:8px; align-items:center}
+  .row>label{min-width:120px; color:var(--muted); font-size:13px}
+  .row>input,.row>select,.row>textarea{ flex:1; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:14px }
+  .row>textarea{min-height:80px}
+  .tags{display:flex; gap:6px; flex-wrap:wrap}
+  .tag{font-size:12px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:999px; padding:2px 10px; display:inline-flex; gap:6px; align-items:center}
+  .tag .x{cursor:pointer; font-weight:800}
+  .presets{display:flex; flex-wrap:wrap; gap:6px}
+  .preset{border:1px dashed #cbd5e1; border-radius:999px; padding:5px 10px; cursor:pointer; font-size:12px}
+  .preset.on{background:#e2e8f0; border-style:solid}
+
+  .update-banner{display:none; position:fixed; bottom:12px; left:12px; right:12px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px; box-shadow:0 6px 18px rgba(0,0,0,.08); z-index:99}
+  .update-banner.show{display:flex; align-items:center; justify-content:space-between; gap:10px}
 </style>
 </head>
 <body>
@@ -75,6 +105,7 @@
       <button id="save">Сохранить</button>
       <button id="resetDay" class="btn-danger">Очистить</button>
       <button id="hardReset" title="Полный сброс">Сбросить всё</button>
+      <button id="refreshApp" class="btn-link" title="Перезагрузить и обновить приложение">Обновить приложение</button>
     </div>
 
     <div class="center" id="banquetBar" aria-label="Банкеты"></div>
@@ -87,6 +118,11 @@
     <div class="col" id="col3"></div>
   </div>
 
+  <div class="update-banner" id="upd">
+    Доступна новая версия. <button id="updBtn" class="btn-acc">Обновить</button>
+  </div>
+
+  <!-- Templates -->
   <template id="chipTpl">
     <div class="chip" tabindex="0">
       <span class="name"></span>
@@ -114,26 +150,16 @@
     </div>
   </template>
 
-  <div id="err"></div>
-
 <script>
 'use strict';
-// Minimal error surface — покажем ошибки на странице
-(function(){
-  const el=document.getElementById('err');
-  function show(msg){ el.textContent=msg; el.classList.add('show'); }
-  window.addEventListener('error', e=> show('Ошибка: '+(e.message||e.type)));
-  window.addEventListener('unhandledrejection', e=> show('Промис: '+(e.reason && e.reason.message || e.reason)));
-})();
-
-(function(){ try{ boot(); }catch(e){ console.error(e); const el=document.getElementById('err'); el.textContent='Критическая ошибка: '+e.message; el.classList.add('show'); } })();
+(function(){ try{ boot(); }catch(e){ console.error(e); alert('Ошибка инициализации. Нажми «Сбросить всё» и перезагрузи.'); } })();
 
 function boot(){
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8));
 const fmtRU=iso=>{const [y,m,d]=iso.split('-');return `${d}.${m}.${y}`;}
-const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const STORAGE_KEY='waiters-rota-v21-safe';
+const STORAGE_KEY='waiters-rota-v20';
 const SLOT_LIMIT=7;
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 const BANQUET_TYPES={'ДР':{label:'🎉 ДР',bg:'#FFF1D6',fg:'#7a3d00'},'Свадьба':{label:'💍 Свадьба',bg:'#FFE8F2',fg:'#7a003a'},'Корпоратив':{label:'🏢 Корпоратив',bg:'#E8F7FF',fg:'#0b3d5a'},'Конференция':{label:'📣 Конференция',bg:'#E8EEFF',fg:'#1a2a7a'},'День памяти':{label:'🕯️ День памяти',bg:'#F4F4F5',fg:'#111827'},'Другой':{label:'🏷️ Другое',bg:'#EAFBEA',fg:'#104a20'}};
@@ -216,7 +242,7 @@ function renderWaiters(){
   });
 }
 
-const BANQUET_TYPES2=BANQUET_TYPES; const BTYPE=t=>BANQUET_TYPES2[t]||BANQUET_TYPES2['Другой'];
+const BTYPE=t=>BANQUET_TYPES[t]||BANQUET_TYPES['Другой'];
 function renderBanquetBar(){
   banquetBar.innerHTML='';
   const addBtn=document.createElement('button'); addBtn.className='b-chip b-add'; addBtn.textContent='+ Банкет';
@@ -254,7 +280,6 @@ function renderColumns(){
   const order=['Основной зал','Малый (банкетный) зал','ВИП-комнаты','Веранда','Лофт','Винная комната'];
 
   function mountHall(h,into){
-    if(!h) return;
     const sec=hallTpl.content.firstElementChild.cloneNode(true);
     sec.querySelector('.hall-ico').textContent=hallIcon(h.name);
     sec.querySelector('.hall-title').textContent=h.name;
@@ -273,7 +298,7 @@ function renderColumns(){
         if(assignEntityWithLimit(h.id,p.id,selected)){
           const arr=ensurePath(h.id,p.id);
           counter.textContent=`${arr.length}/${SLOT_LIMIT}`;
-          drawSlot(arr,slot,h.id,p,id);
+          drawSlot(arr,slot,h.id,p.id);
         }
       },{passive:true});
       grid.appendChild(card);
@@ -283,6 +308,7 @@ function renderColumns(){
 
   order.forEach((name,idx)=>{
     const h=by[name];
+    if(!h) return;
     if(idx<2) mountHall(h,col1);
     else if(idx==2) mountHall(h,col2);
     else mountHall(h,col3);
@@ -362,7 +388,7 @@ function openCommentsModal(wid){
     '<div class="row" style="justify-content:flex-end; gap:8px"><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>';
   openModal(html,(dlg,close)=>{
     const cList=dlg.querySelector('#cList'), cInput=dlg.querySelector('#cInput');
-    const draw=()=>{ cList.innerHTML=''; getNotes(wid).forEach((t,i)=>{ const tag=document.createElement('span'); tag.className='tag'; text=t+' '; const x=document.createElement('span'); x.className='x'; x.textContent='×'; x.onclick=()=>{delNote(wid,i); renderWaiters(); renderColumns(); draw();}; tag.appendChild(document.createTextNode(text)); tag.appendChild(x); cList.appendChild(tag); }); };
+    const draw=()=>{ cList.innerHTML=''; getNotes(wid).forEach((t,i)=>{ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=t+' '; const x=document.createElement('span'); x.className='x'; x.textContent='×'; x.onclick=()=>{delNote(wid,i); renderWaiters(); renderColumns(); draw();}; tag.appendChild(x); cList.appendChild(tag); }); };
     const box=dlg.querySelector('#presetBox'); box.innerHTML='';
     const cur=getNotes(wid);
     PRESET_COMMENTS.forEach(label=>{
@@ -376,19 +402,34 @@ function openCommentsModal(wid){
   });
 }
 
-function openModal(html,onMount){
-  const wrap=document.createElement('div'); wrap.className='modal'; wrap.innerHTML='<div class="dialog">'+html+'</div>'; document.body.appendChild(wrap);
-  function close(){ wrap.remove(); }
-  wrap.addEventListener('click',e=>{ if(e.target===wrap) close(); },{passive:true});
-  onMount && onMount(wrap.querySelector('.dialog'), close);
-  return {close};
+function openBanquetModal(existing){
+  const isEdit=!!existing;
+  const html =
+    `<h3 style="margin:0">${isEdit?'Изменить банкет':'Новый банкет'} — ${fmtRU(dateKey())}</h3>`+
+    '<div class="row"><label>Кол-во персон</label><input id="bnPeople" type="number" min="1" inputmode="numeric" placeholder="например, 25" /></div>'+
+    '<div class="row"><label>Вид</label><select id="bnType"><option>ДР</option><option>Свадьба</option><option>Корпоратив</option><option>Конференция</option><option>День памяти</option><option>Другой</option></select></div>'+
+    '<div class="row" id="bnOtherRow" style="display:none"><label>Другой</label><input id="bnOther" /></div>'+
+    '<div class="row"><label>Комментарий</label><textarea id="bnNote" rows="3" placeholder="Пожелания, тайминг, контакты..."></textarea></div>'+
+    `<div class="row" style="justify-content:flex-end; gap:8px"><button id="bnSave" class="btn-acc">${isEdit?'Сохранить':'Добавить'}</button><button id="bnClose">Закрыть</button></div>`;
+  openModal(html,(dlg,close)=>{
+    const people=dlg.querySelector('#bnPeople'), type=dlg.querySelector('#bnType'), otherRow=dlg.querySelector('#bnOtherRow'), other=dlg.querySelector('#bnOther'), note=dlg.querySelector('#bnNote');
+    type.onchange=()=>{ otherRow.style.display=(type.value==='Другой')?'flex':'none'; };
+    if(isEdit){ people.value=existing.people; type.value=existing.type; note.value=existing.note||''; if(existing.type==='Другой'){ otherRow.style.display='flex'; if(other) other.value=existing.other||''; } }
+    dlg.querySelector('#bnSave').onclick=()=>{
+      const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите корректное число персон.');
+      if(isEdit){ existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim(); }
+      else{ banquetsForDay().push({ id:UUID(), people:n, type:type.value, other:(other&&other.value||'').trim(), note:(note.value||'').trim() }); }
+      save(); renderBanquetBar(); renderColumns(); close();
+    };
+    dlg.querySelector('#bnClose').onclick=close;
+  });
 }
 
 function buildShareText(){
   const d=dateKey(); const lines=['Распределение — '+fmtRU(d)];
   const ass=getDayAssignments();
   db.halls.forEach(h=>{
-    lines.push('\\n'+h.name+':');
+    lines.push('\n'+h.name+':');
     (h.positions||[]).forEach(p=>{
       const arr=(ass[h.id]&&ass[h.id][p.id])||[];
       const title=p.name||'Без названия';
@@ -401,18 +442,25 @@ function buildShareText(){
       lines.push('• '+title+': '+people+`  (${arr.length}/${SLOT_LIMIT})`);
     });
   });
-  const bl=banquetsForDay(); if(bl.length){ lines.push('\\nБанкеты: '+ bl.map(b=> (BANQUЕТ_TYPES[b.type].label)+' · '+b.people).join('; ')); }
-  return lines.join('\\n');
+  const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> (BANQUET_TYPES[b.type].label)+' · '+b.people).join('; ')); }
+  return lines.join('\n');
 }
-
 async function share(){
   const text=buildShareText(), title='Распределение '+fmtRU(dateKey());
   try{ if(navigator.share){ await navigator.share({title,text}); return; } }catch(_){}
-  try{ await navigator.clipboard.writeText(text); alert('Текст скопирован.'); }
+  try{ await navigator.clipboard.writeText(text); alert('Текст скопирован. Вставьте в WhatsApp/Telegram.'); }
   catch(_){
     const blob=new Blob([text],{type:'text/plain'}); const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download=title+'.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
+}
+
+function openModal(html,onMount){
+  const wrap=document.createElement('div'); wrap.className='modal'; wrap.innerHTML='<div class="dialog">'+html+'</div>'; document.body.appendChild(wrap);
+  function close(){ wrap.remove(); }
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) close(); },{passive:true});
+  onMount && onMount(wrap.querySelector('.dialog'), close);
+  return {close};
 }
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ selected=null; renderWaiters(); renderBanquetBar(); }});
@@ -440,7 +488,58 @@ document.getElementById('addWaiter').addEventListener('click',()=>{
 
 function renderAll(){ renderWaiters(); renderBanquetBar(); renderColumns(); }
 dateEl.value=todayISO(); renderAll();
+
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js?ver=20');
+      if (reg.update) reg.update();
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner(() => nw.postMessage({type:'SKIP_WAITING'}));
+          }
+        });
+      });
+      if (reg.waiting && navigator.serviceWorker.controller) {
+        showUpdateBanner(() => reg.waiting.postMessage({type:'SKIP_WAITING'}));
+      }
+    } catch (e) { console.error('SW registration failed:', e); }
+  });
+
+  function showUpdateBanner(apply){
+    const bar=document.getElementById('upd'); const btn=document.getElementById('updBtn');
+    bar.classList.add('show'); btn.onclick=apply;
+  }
+
+  document.getElementById('refreshApp').addEventListener('click', async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    } catch {}
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch {}
+    }
+    location.href = location.pathname + '?v=20';
+  });
 }
+} // boot
+</script>
+
+<script>
+// no-op fallback
 </script>
 </body>
 </html>
