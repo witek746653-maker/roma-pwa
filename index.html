@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Распределение официантов — компакт</title>
+<title>Распределение официантов — мобильная версия</title>
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc; --badge:#fde047; --badgeText:#1f2937 }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:12px/1.25 system-ui,-apple-system,Segoe UI,Roboto}
-
-  /* ШАПКА */
+  .okbar{display:none;position:sticky;top:0;z-index:20;background:#ecfdf5;color:#065f46;border-bottom:1px solid #a7f3d0;padding:6px 10px;font-weight:700}
   .header{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:1fr;gap:6px;padding:6px;border-bottom:1px solid var(--border);background:#fff}
   .bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   label{font-size:10px;color:var(--muted)}
@@ -19,25 +18,17 @@
   .btn{border:1px solid var(--border)}
   .btn-acc{border-color:#c7d2fe}
   .btn-danger{border-color:#fecaca}
-  .badge{
-    display:inline-flex;margin-top:2px;align-self:flex-start;background:var(--badge);
-    color:var(--badgeText);border-radius:999px;padding:3px 8px;font-weight:700;font-size:11px;cursor:pointer
-  }
-
-  /* БАНКЕТЫ */
+  .badge{display:inline-flex;margin-top:2px;align-self:flex-start;background:var(--badge);color:var(--badgeText);border-radius:999px;padding:3px 8px;font-weight:700;font-size:11px;cursor:pointer}
   .center{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
   .b-chip{border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:#fff;display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:12px;cursor:pointer}
   .b-chip.active{outline:2px solid rgba(99,102,241,.25)}
   .b-actions{display:inline-flex;gap:4px}
   .icon-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:2px 5px;font-size:11px}
-
-  /* ОФИЦИАНТЫ */
   .waiters{display:grid;gap:6px}
   .w-section{display:flex;align-items:center;gap:6px}
   .w-title{font-weight:800;color:#475569;font-size:11px}
   .w-row{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:3px 4px;overflow-x:auto}
   .more-toggle{border:1px dashed #cbd5e1;border-radius:8px;padding:2px 8px;background:#fff;font-size:11px;cursor:pointer}
-  /* чип ещё меньше */
   .chip{border:1px solid #c7d2fe;border-radius:10px;padding:3px 6px;background:#eef2ff;color:#0b1e4a;display:inline-flex;flex-direction:column;gap:2px;min-width:max-content}
   .chip .top{display:flex;gap:4px;align-items:center}
   .chip .name{font-weight:800;font-size:11px}
@@ -45,8 +36,6 @@
   .chip .del{border:none;background:none;color:#991b1b;font-weight:900;font-size:13px;line-height:1;padding:0 3px}
   .chip .note{font-size:10px;color:#64748b}
   .chip.active{outline:2px solid rgba(99,102,241,.25)}
-
-  /* КОЛОНКИ */
   .columns{display:grid;gap:6px;padding:6px;grid-template-columns:repeat(3,1fr)}
   details.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px}
   summary{list-style:none;display:flex;gap:6px;align-items:flex-start;cursor:pointer}
@@ -56,7 +45,6 @@
   .hall-brief{margin-left:8px;color:var(--muted);font-size:10px;line-height:1.25;max-width:65%;display:none;white-space:normal}
   details[open] .hall-brief{display:none}
   details.panel:not([open]) .hall-brief.has{display:block}
-
   .pos-grid{display:grid;gap:6px;margin-top:6px}
   .pos-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
   .pos-head{display:flex;gap:6px;align-items:center}
@@ -66,22 +54,17 @@
   .adder{display:flex;gap:6px;align-items:center}
   .adder select{border:1px solid var(--border);border-radius:8px;min-height:26px;padding:2px 6px;font-size:12px;max-width:100%}
   .adder .addBtn{border:1px solid #c7d2fe;background:#eef2ff;border-radius:8px;min-height:26px;padding:2px 8px;font-size:12px;cursor:pointer}
-
-  /* ЭЛЕМЕНТ В СЛОТЕ */
   .assign{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:#fafafa}
   .assign .top{display:flex;gap:6px;align-items:center}
   .assign .w-name{font-weight:800;font-size:12px}
   .assign .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
   .assign .w-note{font-size:10px;color:#64748b}
-
-  /* МОДАЛКИ */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;padding:10px;z-index:50}
   .dialog{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;min-width:min(96vw,420px);display:flex;flex-direction:column;gap:8px}
   .row{display:flex;gap:6px;align-items:center}
   .row>label{min-width:120px;color:#64748b;font-size:12px}
   .row>input,.row>select,.row>textarea{flex:1;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12px}
   .row>textarea{min-height:70px}
-
   @media (max-width:430px){
     html,body{font-size:11px}
     input[type="date"],button{min-height:26px;font-size:11px}
@@ -93,14 +76,15 @@
 </style>
 </head>
 <body>
+  <div id="okbar" class="okbar">✅ JS работает — интерфейс активен</div>
+
   <div class="header">
     <div class="bar">
       <div class="field">
         <label for="date">Дата</label>
         <input id="date" type="date" />
-        <span id="shiftBadge" class="badge" title="Подробнее">👥 В смене: —</span>
+        <span id="shiftBadge" class="badge" title="Считается автоматически">👥 В смене: —</span>
       </div>
-      <button id="setShift" class="btn btn-acc" title="Количество человек в смене">👥 Кол-во</button>
       <button id="addWaiter" class="btn btn-acc">Добавить официанта</button>
       <button id="share" class="btn btn-acc">Поделиться</button>
       <button id="copy" class="btn">Копировать</button>
@@ -127,7 +111,6 @@
     <div class="col" id="col3"></div>
   </div>
 
-  <!-- шаблоны -->
   <template id="chipTpl">
     <div class="chip" tabindex="0">
       <div class="top">
@@ -164,25 +147,28 @@
     </div>
   </template>
 
-<script>
+  <noscript>
+    <div style="padding:12px;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;margin:8px;border-radius:8px">
+      В вашем браузере отключён JavaScript — страница не будет работать. Включите JavaScript и перезагрузите.
+    </div>
+  </noscript>
+
+<script defer>
+(function(){
 'use strict';
+
+/* ====== «индикатор живости» ====== */
+function showOK(){ var el=document.getElementById('okbar'); if(el) el.style.display='block'; }
 
 /* ====== КОНСТАНТЫ/ДАННЫЕ ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v7'; // фикс: стабильное имя константы банкетов + автосчёт смены
+const STORAGE_KEY='rota-compact-v8';
 const MAX_AGE_DAYS=30;
 
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 
-const HALL_ICONS = {
-  'Основной зал':'🏛️','Малый (банкетный) зал':'🪑','ВИП-комнаты':'👑',
-  'Веранда':'🌿','Лофт':'🏠','Винная комната':'🍷'
-};
-const POS_ICONS = {
-  'Зона окна':'🪟','5-я линия':'5️⃣','Столы 7, 8, 9':'🍽️','Столы 10, 11, 12':'🍽️',
-  'Подиум':'🧭','МБЗ':'🪑','Большой ВИП':'⭐','Малый ВИП':'✨','Каюта':'🚪','Лиенда':'🛋️',
-  'Веранда 1':'🌿','Веранда 2':'🌿','Лофт':'🏠','Винная комната':'🍷'
-};
+const HALL_ICONS={ 'Основной зал':'🏛️','Малый (банкетный) зал':'🪑','ВИП-комнаты':'👑','Веранда':'🌿','Лофт':'🏠','Винная комната':'🍷' };
+const POS_ICONS={ 'Зона окна':'🪟','5-я линия':'5️⃣','Столы 7, 8, 9':'🍽️','Столы 10, 11, 12':'🍽️','Подиум':'🧭','МБЗ':'🪑','Большой ВИП':'⭐','Малый ВИП':'✨','Каюта':'🚪','Лиенда':'🛋️','Веранда 1':'🌿','Веранда 2':'🌿','Лофт':'🏠','Винная комната':'🍷' };
 
 const CANON_HALLS=[
   {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
@@ -191,44 +177,44 @@ const CANON_HALLS=[
   {name:'Веранда', positions:['Веранда 1','Веранда 2']},
   {name:'Лофт', positions:['Лофт']},
   {name:'Винная комната', positions:['Винная комната']}
-};
-
+];
 const BANQUET_TYPES={'ДР':'🎉 ДР','Свадьба':'💍 Свадьба','Корпоратив':'🏢 Корпоратив','Конференция':'📣 Конференция','День памяти':'🕯️ День памяти','Другой':'🏷️ Другое'};
+const PRIMARY_NAMES=['Виктор','Элона','Полина','Наталья Ч.','Настя','Роман'];
+const SECONDARY_NAMES=['Игорь','Катя','Юля','Наташа В.','Вова','Маша','Иван','Наташа Величко'];
 
-/* Смены */
-const PRIMARY_NAMES = ['Виктор','Элона','Полина','Наталья Ч.','Настя','Роман'];
-const SECONDARY_NAMES = ['Игорь','Катя','Юля','Наташа В.','Вова','Маша','Иван','Наташа Величко'];
-
-function buildDB(){
-  const makeHall= h => ({id:UUID(), name:h.name, positions:h.positions.map(n=>({id:UUID(), name:n}))});
-  const uniqList = [...new Set([...PRIMARY_NAMES, ...SECONDARY_NAMES])];
-  return {
-    halls: CANON_HALLS.map(makeHall),
-    waiters: uniqList.map(n=>({id:UUID(), name:n})),
-    assignments:{},  // date -> hallId -> posId -> [{k:'w'|'b', id}]
-    notes:{},        // date -> waiterId -> [tags]
-    banquets:{},     // date -> [{id,type,people,other?,note?}]
-    shiftSize:{},    // date -> number (держим = уникальным именам)
-    lastSeenISO: todayISO()
-  };
-}
-function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
-let db = load() || buildDB();
-purgeOldData(); save();
-
-/* ====== УТИЛЫ ====== */
-const dateEl=document.getElementById('date');
-const shiftBadge=document.getElementById('shiftBadge');
-const rowPrimary=document.getElementById('rowPrimary');
-const rowSecondary=document.getElementById('rowSecondary');
-const toggleSecondary=document.getElementById('toggleSecondary');
-
+/* ====== ВСПОМОГАТЕЛЬНОЕ ====== */
+const $=sel=>document.querySelector(sel);
 function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
-function dateKey(){return dateEl.value || todayISO();}
+function dateKey(){return $('#date').value || todayISO();}
 function weekdayRU(iso){ const d=new Date(iso+'T00:00'); const w=['вс','пн','вт','ср','чт','пт','сб']; return w[d.getDay()]; }
 function fmtDateRU(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y} (${weekdayRU(iso)})`; }
 
+function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function purgeOldData(){
+  const now = new Date(todayISO()+'T00:00');
+  ['assignments','notes','banquets','shiftSize'].forEach(key=>{
+    const m=db[key]||{};
+    for(const k in m){
+      const d=new Date(k+'T00:00');
+      if((now-d)/(1000*60*60*24) > MAX_AGE_DAYS) delete m[k];
+    }
+  });
+}
+
+/* ====== БАЗА ====== */
+function buildDB(){
+  const uniq=[...new Set([...PRIMARY_NAMES,...SECONDARY_NAMES])].map(n=>({id:UUID(),name:n}));
+  return {
+    halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
+    waiters: uniq,
+    assignments:{}, notes:{}, banquets:{}, shiftSize:{}
+  };
+}
+let db = load() || buildDB();
+purgeOldData(); save();
+
+/* ====== МАППИНГ ====== */
 function hallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
 function dayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
 function ensureSlot(hid,pid){const a=dayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
@@ -246,35 +232,22 @@ function uniqueWaitersAll(){
   for(const hid in ass){ for(const pid in ass[hid]){ (ass[hid][pid]||[]).forEach(e=>{ if(e.k==='w') ids.add(e.id); }); } }
   return ids;
 }
-function purgeOldData(){
-  const now = new Date(todayISO()+'T00:00');
-  ['assignments','notes','banquets','shiftSize'].forEach(key=>{
-    const m=db[key]||{};
-    for(const k in m){
-      const d=new Date(k+'T00:00');
-      const diff=(now-d)/(1000*60*60*24);
-      if(diff>MAX_AGE_DAYS) delete m[k];
-    }
-  });
-  db.lastSeenISO=todayISO();
-}
 
-/* ====== СМЕНА (автосчёт) ====== */
+/* ====== UI элементы ====== */
+const chipTpl=document.getElementById('chipTpl');
+const hallTpl=document.getElementById('hallTpl');
+const posCardTpl=document.getElementById('posCardTpl');
+
+let selected=null; // {k:'w'|'b', id}
+
+/* ====== Шапка: смена ====== */
 function renderShiftBadge(){
   const n = uniqueWaitersAll().size;
   db.shiftSize[dateKey()] = n; save();
-  shiftBadge.textContent = `👥 В смене: ${n}`;
+  $('#shiftBadge').textContent = `👥 В смене: ${n}`;
 }
-function openShiftInfo(){
-  alert('Количество в смене считается автоматически по уникальным именам, назначенным на позиции за выбранную дату.');
-}
-document.getElementById('setShift').onclick=openShiftInfo;
-shiftBadge.onclick=openShiftInfo;
 
-/* ====== ОФИЦИАНТЫ (шапка) ====== */
-const chipTpl=document.getElementById('chipTpl');
-let selected=null; // {k:'w'|'b', id}
-
+/* ====== Шапка: официанты ====== */
 function renderWaiterChip(w, isSecondary=false){
   const chip=chipTpl.content.firstElementChild.cloneNode(true);
   chip.querySelector('.name').textContent=w.name;
@@ -307,51 +280,41 @@ function renderWaiterChip(w, isSecondary=false){
     save(); renderAll();
   });
 
+  // авто «Усиление» при первом добавлении из 2-й смены
   chip.dataset.secondary = isSecondary ? '1' : '0';
   return chip;
 }
 
 function renderWaiters(){
-  const rowP=document.getElementById('rowPrimary');
-  const rowS=document.getElementById('rowSecondary');
+  const rowP=$('#rowPrimary'), rowS=$('#rowSecondary');
   rowP.innerHTML=''; rowS.innerHTML='';
-
-  const ensureName = (n)=> { if(!db.waiters.some(w=>w.name===n)) db.waiters.push({id:UUID(),name:n}); };
-  [...PRIMARY_NAMES, ...SECONDARY_NAMES].forEach(ensureName);
-
-  const mapByName = Object.fromEntries(db.waiters.map(w=>[w.name,w]));
-  PRIMARY_NAMES.forEach(n=>{ const w=mapByName[n]; if(w){ rowP.appendChild(renderWaiterChip(w,false)); } });
-  SECONDARY_NAMES.forEach(n=>{ const w=mapByName[n]; if(w){ rowS.appendChild(renderWaiterChip(w,true)); } });
-
-  toggleSecondary.onclick=()=>{
-    const open = rowS.style.display==='none';
-    rowS.style.display = open?'grid':'none';
-    toggleSecondary.textContent = open?'2-я смена ↑':'2-я смена ↓';
-  };
+  const ensureName=n=>{ if(!db.waiters.some(w=>w.name===n)) db.waiters.push({id:UUID(),name:n}); };
+  [...PRIMARY_NAMES,...SECONDARY_NAMES].forEach(ensureName);
+  const map=Object.fromEntries(db.waiters.map(w=>[w.name,w]));
+  PRIMARY_NAMES.forEach(n=>{ const w=map[n]; if(w) rowP.appendChild(renderWaiterChip(w,false)); });
+  SECONDARY_NAMES.forEach(n=>{ const w=map[n]; if(w) rowS.appendChild(renderWaiterChip(w,true)); });
 }
 
-/* ====== БАНКЕТЫ ====== */
-const banquetBar=document.getElementById('banquetBar');
+/* ====== Банкеты ====== */
 function renderBanquetBar(){
-  banquetBar.innerHTML='';
+  const bar=$('#banquetBar'); bar.innerHTML='';
   const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
-  addBtn.onclick=()=>openBanquetModal();
-  banquetBar.appendChild(addBtn);
+  addBtn.onclick=()=>openBanquetModal(); bar.appendChild(addBtn);
 
   banquetsForDay().forEach(b=>{
     const meta=BANQUET_TYPES[b.type]||BANQUET_TYPES['Другой'];
-    const chip=document.createElement('div'); chip.className='b-chip'; if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
-    const title=(b.type==='Другой' && b.other)? `Другое: ${b.other}` : meta;
-    chip.textContent = `${title} · ${b.people}`;
+    const chip=document.createElement('div'); chip.className='b-chip';
+    if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
+    const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:meta;
+    chip.textContent=`${title} · ${b.people}`;
     const actions=document.createElement('span'); actions.className='b-actions';
     const edit=document.createElement('button'); edit.className='icon-btn'; edit.textContent='✏️';
     const del=document.createElement('button'); del.className='icon-btn'; del.textContent='🗑';
     edit.onclick=(e)=>{e.stopPropagation(); openBanquetModal(b);};
     del.onclick=(e)=>{e.stopPropagation(); deleteBanquet(b.id);};
     chip.appendChild(actions); actions.appendChild(edit); actions.appendChild(del);
-
     chip.addEventListener('click',()=>{ selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id}; renderBanquetBar(); },{passive:true});
-    banquetBar.appendChild(chip);
+    bar.appendChild(chip);
   });
 }
 function deleteBanquet(id){
@@ -361,32 +324,26 @@ function deleteBanquet(id){
   save(); renderColumns();
 }
 
-/* ====== КОЛОНКИ + БРИФЫ ====== */
-const hallTpl=document.getElementById('hallTpl'), posCardTpl=document.getElementById('posCardTpl');
-const col1=document.getElementById('col1'), col2=document.getElementById('col2'), col3=document.getElementById('col3');
-const hallBriefEls=new Map(), hallTotalEls=new Map(); // hid -> span
-
+/* ====== Колонки ====== */
+const hallBriefEls=new Map(), hallTotalEls=new Map();
 function renderColumns(){
-  col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
+  $('#col1').innerHTML=''; $('#col2').innerHTML=''; $('#col3').innerHTML='';
   hallBriefEls.clear(); hallTotalEls.clear();
   const map=hallsByName();
-
-  mountHall(map['Основной зал'], col1);
-  mountHall(map['Малый (банкетный) зал'], col1);
-  mountHall(map['ВИП-комнаты'], col2);
-  mountHall(map['Лофт'], col2);
-  mountHall(map['Веранда'], col3);
-  mountHall(map['Винная комната'], col3);
-
-  updateAllHallTotals();
-  renderShiftBadge();
+  mountHall(map['Основной зал'], $('#col1'));
+  mountHall(map['Малый (банкетный) зал'], $('#col1'));
+  mountHall(map['ВИП-комнаты'], $('#col2'));
+  mountHall(map['Лофт'], $('#col2'));
+  mountHall(map['Веранда'], $('#col3'));
+  mountHall(map['Винная комната'], $('#col3'));
+  updateAllHallTotals(); renderShiftBadge();
 }
 
 function mountHall(h,into){
   if(!h) return;
   const sec=hallTpl.content.firstElementChild.cloneNode(true);
   sec.dataset.hid=h.id;
-  sec.querySelector('.hall-title').textContent = (HALL_ICONS[h.name]||'')+' '+h.name;
+  sec.querySelector('.hall-title').textContent=(HALL_ICONS[h.name]||'')+' '+h.name;
   const totalEl=sec.querySelector('.hall-total'); hallTotalEls.set(h.id,totalEl);
   const briefEl=sec.querySelector('.hall-brief'); hallBriefEls.set(h.id, briefEl);
   const grid=sec.querySelector('.pos-grid');
@@ -398,7 +355,6 @@ function mountHall(h,into){
     const slot=card.querySelector('.slot');
     const pick=card.querySelector('.pick');
     const addBtn=card.querySelector('.addBtn');
-
     fillPick(pick);
 
     const draw=()=>{
@@ -419,8 +375,7 @@ function mountHall(h,into){
         }
       });
       counter.textContent=String(arr.length);
-      refreshHallBrief(h.id);
-      renderShiftBadge();
+      refreshHallBrief(h.id); renderShiftBadge();
     };
 
     function assign(hid,pid,ent){
@@ -495,11 +450,9 @@ function refreshHallBrief(hid){
   }
 }
 
-function updateAllHallTotals(){
-  db.halls.forEach(h=> refreshHallBrief(h.id));
-}
+function updateAllHallTotals(){ db.halls.forEach(h=> refreshHallBrief(h.id)); }
 
-/* ====== РЕНДЕР ЭЛЕМЕНТА В ПОЗИЦИИ ====== */
+/* ====== Slot item ====== */
 function renderAssign(name, notesArr, bg, fg, onRemove){
   const el=document.createElement('div'); el.className='assign';
   if(bg){ el.style.background=bg; el.style.borderColor=bg; }
@@ -515,7 +468,7 @@ function renderAssign(name, notesArr, bg, fg, onRemove){
   return el;
 }
 
-/* ====== КОММЕНТАРИИ ====== */
+/* ====== Комменты ====== */
 function openCommentsModal(wid, wname){
   const presets=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете','Усиление'];
   const wrap=document.createElement('div'); wrap.className='modal';
@@ -551,7 +504,7 @@ function openCommentsModal(wid, wname){
   redraw();
 }
 
-/* ====== БАНКЕТНАЯ МОДАЛКА ====== */
+/* ====== Банкетная модалка ====== */
 function openBanquetModal(existing){
   const isEdit=!!existing;
   const wrap=document.createElement('div'); wrap.className='modal';
@@ -577,61 +530,21 @@ function openBanquetModal(existing){
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
 }
 
-/* ====== КНОПКИ ====== */
-document.getElementById('addWaiter').onclick=()=>{
-  const wrap=document.createElement('div'); wrap.className='modal';
-  wrap.innerHTML='<div class="dialog">'+
-    '<div style="font-weight:900">Новый официант</div>'+
-    '<div class="row"><label>Имя</label><input id="wName" placeholder="например: Павел"/></div>'+
-    '<div class="row" style="justify-content:flex-end"><button id="wSave" class="btn btn-acc">Добавить</button><button id="wClose">Отмена</button></div>'+
-  '</div>';
-  document.body.appendChild(wrap);
-  const input=wrap.querySelector('#wName');
-  wrap.querySelector('#wSave').onclick=()=>{
-    const name=(input.value||'').trim(); if(!name) return;
-    if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже есть.');
-    db.waiters.push({id:UUID(), name}); save(); renderAll(); wrap.remove();
-  };
-  wrap.querySelector('#wClose').onclick=()=>wrap.remove();
-  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
-  setTimeout(()=>input.focus(),0);
-};
-
-document.getElementById('copy').onclick=async()=>{
-  const txt=exportText(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
-};
-document.getElementById('share').onclick=async()=>{
-  const text=exportText(); try{ if(navigator.share){ await navigator.share({title:'Распределение',text}); } else { await navigator.clipboard.writeText(text); alert('Скопировано'); } }catch{}
-};
-document.getElementById('resetDay').onclick=()=>{
-  if(!confirm('Очистить все данные на выбранную дату?')) return;
-  resetCurrentDate(); save(); renderAll();
-};
-document.getElementById('date').onchange=()=>{
-  resetCurrentDate(); save(); renderAll();
-};
-
-/* ====== СБРОС ДНЯ ====== */
-function resetCurrentDate(){
-  const k=dateKey();
-  db.assignments[k]={};
-  db.notes[k]={};
-  db.banquets[k]=[];
-  delete db.shiftSize[k];
+/* ====== Сервисные ====== */
+function fillPick(selectEl){
+  selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
+  db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
 }
+function renderShiftAndTotals(){ updateAllHallTotals(); renderShiftBadge(); }
 
-/* ====== ЭКСПОРТ ====== */
+/* ====== Экспорт ====== */
 function exportText(){
   const iso=dateKey();
-  const head1 = 'Добрый день';
-  const head2 = `Распределение — ${fmtDateRU(iso)} · В смене (${uniqueWaitersAll().size}) человек`;
-  const lines=[head1, head2];
-
+  const lines=['Добрый день', `Распределение — ${fmtDateRU(iso)} · В смене (${uniqueWaitersAll().size}) человек`];
   const ass=dayAss();
   db.halls.forEach(h=>{
-    const hasAny = (h.positions||[]).some(p=> (ass[h.id]&&ass[h.id][p.id]||[]).length>0 );
+    const hasAny=(h.positions||[]).some(p=> (ass[h.id]&&ass[h.id][p.id]||[]).length>0 );
     if(!hasAny) return;
-
     lines.push('\n'+(HALL_ICONS[h.name]||'')+' '+h.name+':');
     h.positions.forEach(p=>{
       const arr=(ass[h.id]&&ass[h.id][p.id])||[];
@@ -645,16 +558,79 @@ function exportText(){
       lines.push('• '+(POS_ICONS[p.name]||'')+' '+p.name+': '+people);
     });
   });
-
   lines.push('\nПожелание: Всем хорошего дня и больших чаевых.');
   return lines.join('\n');
 }
 
-/* ====== СТАРТ ====== */
-function renderAll(){ renderBanquetBar(); renderWaiters(); renderColumns(); }
-dateEl.value=todayISO();
-resetCurrentDate(); // чистый лист на выбранную дату
-renderAll();
-</script>
+/* ====== Сброс дня ====== */
+function resetCurrentDate(){
+  const k=dateKey();
+  db.assignments[k]={};
+  db.notes[k]={};
+  db.banquets[k]=[];
+  delete db.shiftSize[k];
+}
+
+/* ====== РЕНДЕР ВСЕГО ====== */
+function renderAll(){
+  renderBanquetBar();
+  renderWaiters();
+  renderColumns();
+  renderShiftAndTotals();
+}
+
+/* ====== ИНИЦ ====== */
+document.addEventListener('DOMContentLoaded', function(){
+  showOK();
+
+  const dateEl=document.getElementById('date');
+  dateEl.value=todayISO();             // всегда ставим сегодняшнюю дату
+  resetCurrentDate(); save();          // чистый лист на дату
+  renderAll();
+
+  // кнопки шапки
+  document.getElementById('toggleSecondary').addEventListener('click',()=>{
+    const rowS=$('#rowSecondary'); const open=rowS.style.display==='none';
+    rowS.style.display=open?'grid':'none';
+    document.getElementById('toggleSecondary').textContent=open?'2-я смена ↑':'2-я смена ↓';
+  });
+
+  document.getElementById('addWaiter').addEventListener('click',()=>{
+    const wrap=document.createElement('div'); wrap.className='modal';
+    wrap.innerHTML='<div class="dialog">'+
+      '<div style="font-weight:900">Новый официант</div>'+
+      '<div class="row"><label>Имя</label><input id="wName" placeholder="например: Павел"/></div>'+
+      '<div class="row" style="justify-content:flex-end"><button id="wSave" class="btn btn-acc">Добавить</button><button id="wClose">Отмена</button></div>'+
+    '</div>';
+    document.body.appendChild(wrap);
+    const input=wrap.querySelector('#wName');
+    wrap.querySelector('#wSave').onclick=()=>{
+      const name=(input.value||'').trim(); if(!name) return;
+      if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже есть.');
+      db.waiters.push({id:UUID(), name}); save(); renderAll(); wrap.remove();
+    };
+    wrap.querySelector('#wClose').onclick=()=>wrap.remove();
+    wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+    setTimeout(()=>input.focus(),0);
+  });
+
+  document.getElementById('copy').addEventListener('click', async ()=>{
+    const txt=exportText(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
+  });
+
+  document.getElementById('share').addEventListener('click', async ()=>{
+    const text=exportText(); try{ if(navigator.share){ await navigator.share({title:'Распределение',text}); } else { await navigator.clipboard.writeText(text); alert('Скопировано'); } }catch{}
+  });
+
+  document.getElementById('resetDay').addEventListener('click',()=>{
+    if(!confirm('Очистить все данные на выбранную дату?')) return;
+    resetCurrentDate(); save(); renderAll();
+  });
+
+  dateEl.addEventListener('change', ()=>{
+    resetCurrentDate(); save(); renderAll();
+  });
+});
+})();</script>
 </body>
 </html>
