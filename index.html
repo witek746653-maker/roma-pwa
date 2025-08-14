@@ -4,9 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="format-detection" content="telephone=no" />
-<title>Распределение — v19 (add/del waiters, x to remove)</title>
+<title>Распределение — v20 auto-update</title>
 
-<!-- PWA -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#2563eb">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,12 +18,8 @@
   html,body{height:100%; width:100%}
   body{margin:0; font:13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Noto Sans,sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden}
 
-  .header{
-    position:sticky; top:0; z-index:10;
-    display:grid; grid-template-columns:1fr; gap:8px;
-    padding:10px; border-bottom:1px solid var(--border);
-    background:rgba(255,255,255,.98); backdrop-filter:saturate(1.05) blur(2px)
-  }
+  .header{ position:sticky; top:0; z-index:10; display:grid; grid-template-columns:1fr; gap:8px;
+    padding:10px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.98); backdrop-filter:saturate(1.05) blur(2px) }
   @media (min-width:900px){ .header{ grid-template-columns:auto 1fr auto; align-items:start } }
 
   .left{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
@@ -35,6 +30,7 @@
   button:active{transform:scale(.98)}
   .btn-acc{border-color:rgba(37,99,235,.35)}
   .btn-danger{border-color:rgba(239,68,68,.45); color:#b91c1c}
+  .btn-link{border:none; background:transparent; color:#2563eb; text-decoration:underline; padding:0 6px}
 
   .center{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center}
   .b-chip{border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fff; display:inline-flex; gap:6px; align-items:center; font-weight:700; font-size:13px; cursor:pointer; max-width:100%}
@@ -91,6 +87,9 @@
   .presets{display:flex; flex-wrap:wrap; gap:6px}
   .preset{border:1px dashed #cbd5e1; border-radius:999px; padding:5px 10px; cursor:pointer; font-size:12px}
   .preset.on{background:#e2e8f0; border-style:solid}
+
+  .update-banner{display:none; position:fixed; bottom:12px; left:12px; right:12px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px; box-shadow:0 6px 18px rgba(0,0,0,.08); z-index:99}
+  .update-banner.show{display:flex; align-items:center; justify-content:space-between; gap:10px}
 </style>
 </head>
 <body>
@@ -106,6 +105,7 @@
       <button id="save">Сохранить</button>
       <button id="resetDay" class="btn-danger">Очистить</button>
       <button id="hardReset" title="Полный сброс">Сбросить всё</button>
+      <button id="refreshApp" class="btn-link" title="Перезагрузить и обновить приложение">Обновить приложение</button>
     </div>
 
     <div class="center" id="banquetBar" aria-label="Банкеты"></div>
@@ -118,7 +118,11 @@
     <div class="col" id="col3"></div>
   </div>
 
-  <!-- Шаблоны -->
+  <div class="update-banner" id="upd">
+    Доступна новая версия. <button id="updBtn" class="btn-acc">Обновить</button>
+  </div>
+
+  <!-- Templates -->
   <template id="chipTpl">
     <div class="chip" tabindex="0">
       <span class="name"></span>
@@ -148,18 +152,14 @@
 
 <script>
 'use strict';
-
-/* ==== Safe boot ==== */
 (function(){ try{ boot(); }catch(e){ console.error(e); alert('Ошибка инициализации. Нажми «Сбросить всё» и перезагрузи.'); } })();
 
 function boot(){
-/* === Utils === */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8));
 const fmtRU=iso=>{const [y,m,d]=iso.split('-');return `${d}.${m}.${y}`;}
-const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-/* === Data === */
-const STORAGE_KEY='waiters-rota-v19';
+const STORAGE_KEY='waiters-rota-v20';
 const SLOT_LIMIT=7;
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 const BANQUET_TYPES={'ДР':{label:'🎉 ДР',bg:'#FFF1D6',fg:'#7a3d00'},'Свадьба':{label:'💍 Свадьба',bg:'#FFE8F2',fg:'#7a003a'},'Корпоратив':{label:'🏢 Корпоратив',bg:'#E8F7FF',fg:'#0b3d5a'},'Конференция':{label:'📣 Конференция',bg:'#E8EEFF',fg:'#1a2a7a'},'День памяти':{label:'🕯️ День памяти',bg:'#F4F4F5',fg:'#111827'},'Другой':{label:'🏷️ Другое',bg:'#EAFBEA',fg:'#104a20'}};
@@ -178,7 +178,6 @@ function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 
 let db = load() || buildFreshDB();
 
-/* === Refs === */
 const dateEl=document.getElementById('date');
 const waiterRow=document.getElementById('waiterRow');
 const banquetBar=document.getElementById('banquetBar');
@@ -186,7 +185,6 @@ const col1=document.getElementById('col1'), col2=document.getElementById('col2')
 const chipTpl=document.getElementById('chipTpl'), hallTpl=document.getElementById('hallTpl'), posCardTpl=document.getElementById('posCardTpl');
 let selected=null;
 
-/* === Day helpers === */
 function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
 function dateKey(){return dateEl.value || todayISO();}
 function getDayAssignments(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
@@ -200,37 +198,23 @@ function getNotes(id){const m=notesForDay(); return m[id]||(m[id]=[]);}
 function addNote(id,t){const a=getNotes(id); if(!a.includes(t)) a.push(t); save();}
 function delNote(id,i){const a=getNotes(id); a.splice(i,1); save();}
 
-/* === Add / remove waiter (global) === */
 function addWaiter(name){
   const trimmed=(name||'').trim();
   if(!trimmed){ alert('Введите имя.'); return false; }
   if(db.waiters.some(w=>w.name.toLowerCase()===trimmed.toLowerCase())){ alert('Такое имя уже есть.'); return false; }
-  db.waiters.push({id:UUID(), name:trimmed});
-  save(); renderWaiters();
-  return true;
+  db.waiters.push({id:UUID(), name:trimmed}); save(); renderWaiters(); return true;
 }
 function removeWaiterEverywhere(wid){
-  // удалить из списка официантов
   db.waiters = db.waiters.filter(w=>w.id!==wid);
-  // удалить из всех назначений всех дат
   for(const day in db.assignments){
     const halls=db.assignments[day];
-    for(const hid in halls){
-      for(const pid in halls[hid]){
-        halls[hid][pid] = (halls[hid][pid]||[]).filter(e=>!(e.k==='w' && e.id===wid));
-      }
-    }
+    for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid]=(halls[hid][pid]||[]).filter(e=>!(e.k==='w' && e.id===wid)); } }
   }
-  // удалить комментарии по всем датам
-  for(const day in db.dayNotes){
-    if(db.dayNotes[day] && db.dayNotes[day][wid]) delete db.dayNotes[day][wid];
-  }
-  // если был выбран — снять выбор
+  for(const day in db.dayNotes){ if(db.dayNotes[day] && db.dayNotes[day][wid]) delete db.dayNotes[day][wid]; }
   if(selected && selected.k==='w' && selected.id===wid) selected=null;
   save(); renderWaiters(); renderColumns();
 }
 
-/* === Waiters bar === */
 function renderWaiters(){
   waiterRow.innerHTML='';
   db.waiters.forEach(w=>{
@@ -241,22 +225,16 @@ function renderWaiters(){
 
     if(selected && selected.k==='w' && selected.id===w.id) chip.classList.add('active');
 
-    // выбор официанта
     chip.addEventListener('click',e=>{
       if(e.target.closest('.edit') || e.target.closest('.del')) return;
       selected=(selected&&selected.k==='w'&&selected.id===w.id)?null:{k:'w',id:w.id};
       renderWaiters(); renderBanquetBar();
     },{passive:true});
 
-    // комментарии
-    chip.querySelector('.edit').addEventListener('click',e=>{
-      e.stopPropagation(); openCommentsModal(w.id);
-    });
-
-    // удалить официанта
+    chip.querySelector('.edit').addEventListener('click',e=>{ e.stopPropagation(); openCommentsModal(w.id); });
     chip.querySelector('.del').addEventListener('click',e=>{
       e.stopPropagation();
-      const ok=confirm(`Удалить «${w.name}» из списка?\nОн будет убран из всех зон и всех дат.`);
+      const ok=confirm(`Удалить «${w.name}» из списка?`);
       if(ok) removeWaiterEverywhere(w.id);
     });
 
@@ -264,7 +242,6 @@ function renderWaiters(){
   });
 }
 
-/* === Banquet bar (как раньше) === */
 const BTYPE=t=>BANQUET_TYPES[t]||BANQUET_TYPES['Другой'];
 function renderBanquetBar(){
   banquetBar.innerHTML='';
@@ -296,18 +273,17 @@ function deleteBanquet(id){
   if(selected && selected.k==='b' && selected.id===id) selected=null; save(); renderBanquetBar(); renderColumns();
 }
 
-/* === Columns & slots === */
 function hallIcon(n){return ({'Основной зал':'🏛️','Малый (банкетный) зал':'🎉','ВИП-комнаты':'⭐','Веранда':'🌿','Лофт':'🧱','Винная комната':'🍷'})[n]||'🏷️';}
 function renderColumns(){
   col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
   const by=Object.fromEntries(db.halls.map(h=>[h.name,h]));
+  const order=['Основной зал','Малый (банкетный) зал','ВИП-комнаты','Веранда','Лофт','Винная комната'];
 
   function mountHall(h,into){
     const sec=hallTpl.content.firstElementChild.cloneNode(true);
     sec.querySelector('.hall-ico').textContent=hallIcon(h.name);
     sec.querySelector('.hall-title').textContent=h.name;
     const grid=sec.querySelector('.pos-grid');
-
     (h.positions||[]).forEach(p=>{
       const card=posCardTpl.content.firstElementChild.cloneNode(true);
       card.querySelector('.pos-title').textContent=p.name||'';
@@ -316,32 +292,27 @@ function renderColumns(){
       const items=ensurePath(h.id,p.id);
       drawSlot(items,slot,h.id,p.id);
       counter.textContent=`${items.length}/${SLOT_LIMIT}`;
-
-      // добавление (тап по карточке)
       card.addEventListener('click',ev=>{
         if(!selected) return;
-        if(ev.target.closest('.assign')) return; // чтобы тап по чипу не добавлял/не конфликтовал
+        if(ev.target.closest('.assign')) return;
         if(assignEntityWithLimit(h.id,p.id,selected)){
           const arr=ensurePath(h.id,p.id);
           counter.textContent=`${arr.length}/${SLOT_LIMIT}`;
           drawSlot(arr,slot,h.id,p.id);
         }
       },{passive:true});
-
       grid.appendChild(card);
     });
-
     into.appendChild(sec);
   }
 
-  // раскладка по колонкам
-  const order=['Основной зал','Малый (банкетный) зал','ВИП-комнаты','Веранда','Лофт','Винная комната'];
-  mountHall(by[order[0]], col1);
-  mountHall(by[order[1]], col1);
-  mountHall(by[order[2]], col2);
-  mountHall(by[order[3]], col3);
-  mountHall(by[order[4]], col3);
-  mountHall(by[order[5]], col3);
+  order.forEach((name,idx)=>{
+    const h=by[name];
+    if(!h) return;
+    if(idx<2) mountHall(h,col1);
+    else if(idx==2) mountHall(h,col2);
+    else mountHall(h,col3);
+  });
 }
 
 function drawSlot(items,slot,hid,pid){
@@ -369,7 +340,6 @@ function drawSlot(items,slot,hid,pid){
       note.textContent=b&&b.note?b.note:'';
     }
 
-    // Удаление ТОЛЬКО крестиком
     x.addEventListener('click',(e)=>{
       e.stopPropagation();
       removeEntity(hid,pid,ent);
@@ -380,7 +350,6 @@ function drawSlot(items,slot,hid,pid){
 
     el.appendChild(dot); el.appendChild(name); if(note.textContent) el.appendChild(note); el.appendChild(x);
 
-    // DnD (опционально)
     el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify({k:ent.k,id:ent.id}));});
     slot.addEventListener('dragover',e=>{e.preventDefault(); slot.classList.add('highlight');});
     slot.addEventListener('dragleave',()=>slot.classList.remove('highlight'));
@@ -398,7 +367,6 @@ function drawSlot(items,slot,hid,pid){
   });
 }
 
-/* === Assign/remove === */
 function assignEntityWithLimit(hid,pid,ent){
   const arr=ensurePath(hid,pid);
   if(arr.some(x=>x.k===ent.k&&x.id===ent.id)) return false;
@@ -410,7 +378,6 @@ function removeEntity(hid,pid,ent){
   if(i>-1) arr.splice(i,1); save();
 }
 
-/* === Comments === */
 function openCommentsModal(wid){
   const w=waiterById(wid); if(!w) return;
   const html =
@@ -435,7 +402,6 @@ function openCommentsModal(wid){
   });
 }
 
-/* === Banquet modal === */
 function openBanquetModal(existing){
   const isEdit=!!existing;
   const html =
@@ -459,7 +425,6 @@ function openBanquetModal(existing){
   });
 }
 
-/* === Share/Copy === */
 function buildShareText(){
   const d=dateKey(); const lines=['Распределение — '+fmtRU(d)];
   const ass=getDayAssignments();
@@ -490,7 +455,6 @@ async function share(){
   }
 }
 
-/* === Modal + helpers === */
 function openModal(html,onMount){
   const wrap=document.createElement('div'); wrap.className='modal'; wrap.innerHTML='<div class="dialog">'+html+'</div>'; document.body.appendChild(wrap);
   function close(){ wrap.remove(); }
@@ -499,7 +463,6 @@ function openModal(html,onMount){
   return {close};
 }
 
-/* === Events === */
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ selected=null; renderWaiters(); renderBanquetBar(); }});
 document.getElementById('copy').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(buildShareText()); alert('Скопировано.'); }catch(e){ console.error(e); }});
 document.getElementById('save').addEventListener('click',()=>{ save(); alert('Сохранено'); });
@@ -510,8 +473,6 @@ document.getElementById('hardReset').addEventListener('click',()=>{
   localStorage.removeItem(STORAGE_KEY); location.reload();
 });
 document.getElementById('date').addEventListener('change',()=>renderAll());
-
-// Добавить официанта
 document.getElementById('addWaiter').addEventListener('click',()=>{
   const html =
     '<h3 style="margin:0">Новый официант</h3>'+
@@ -528,14 +489,57 @@ document.getElementById('addWaiter').addEventListener('click',()=>{
 function renderAll(){ renderWaiters(); renderBanquetBar(); renderColumns(); }
 dateEl.value=todayISO(); renderAll();
 
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js?ver=20');
+      if (reg.update) reg.update();
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner(() => nw.postMessage({type:'SKIP_WAITING'}));
+          }
+        });
+      });
+      if (reg.waiting && navigator.serviceWorker.controller) {
+        showUpdateBanner(() => reg.waiting.postMessage({type:'SKIP_WAITING'}));
+      }
+    } catch (e) { console.error('SW registration failed:', e); }
+  });
+
+  function showUpdateBanner(apply){
+    const bar=document.getElementById('upd'); const btn=document.getElementById('updBtn');
+    bar.classList.add('show'); btn.onclick=apply;
+  }
+
+  document.getElementById('refreshApp').addEventListener('click', async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    } catch {}
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch {}
+    }
+    location.href = location.pathname + '?v=20';
+  });
+}
 } // boot
 </script>
 
-<!-- SW -->
 <script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(e=>console.error('SW fail', e)); });
-}
+// no-op fallback
 </script>
 </body>
 </html>
