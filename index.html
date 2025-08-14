@@ -6,9 +6,9 @@
 <title>Распределение официантов — мобильная версия</title>
 
 <!-- PWA -->
+<link rel="icon" href="favicon.png" type="image/png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
-<link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc; --badge:#fde047; --badgeText:#1f2937 }
@@ -81,6 +81,11 @@
   }
 </style>
 </head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
 <body>
   <div id="okbar" class="okbar">✅ JS работает — интерфейс активен</div>
 
