@@ -86,9 +86,12 @@
         <span id="shiftBadge" class="badge" title="Считается автоматически">👥 В смене: —</span>
       </div>
       <button id="addWaiter" class="btn btn-acc">Добавить официанта</button>
-      <button id="share" class="btn btn-acc">Поделиться</button>
+      <button id="shareWA" class="btn btn-acc" title="Отправить в WhatsApp">WhatsApp</button>
+      <button id="shareTG" class="btn btn-acc" title="Отправить в Telegram">Telegram</button>
+      <button id="shareMail" class="btn btn-acc" title="Отправить на Email">Email</button>
       <button id="copy" class="btn">Копировать</button>
       <button id="resetDay" class="btn btn-danger">Очистить</button>
+      <button id="statsBtn" class="btn" title="Статистика за месяц">📊 Статистика</button>
     </div>
 
     <div class="center" id="banquetBar" aria-label="Банкеты"></div>
@@ -157,18 +160,34 @@
 (function(){
 'use strict';
 
-/* ====== «индикатор живости» ====== */
+/* ====== индикатор ====== */
 function showOK(){ var el=document.getElementById('okbar'); if(el) el.style.display='block'; }
 
-/* ====== КОНСТАНТЫ/ДАННЫЕ ====== */
+/* ====== данные ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v8';
-const MAX_AGE_DAYS=30;
+const STORAGE_KEY='rota-compact-v9';
+const MAX_AGE_DAYS=60; // 2 месяца
 
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 
 const HALL_ICONS={ 'Основной зал':'🏛️','Малый (банкетный) зал':'🪑','ВИП-комнаты':'👑','Веранда':'🌿','Лофт':'🏠','Винная комната':'🍷' };
-const POS_ICONS={ 'Зона окна':'🪟','5-я линия':'5️⃣','Столы 7, 8, 9':'🍽️','Столы 10, 11, 12':'🍽️','Подиум':'🧭','МБЗ':'🪑','Большой ВИП':'⭐','Малый ВИП':'✨','Каюта':'🚪','Лиенда':'🛋️','Веранда 1':'🌿','Веранда 2':'🌿','Лофт':'🏠','Винная комната':'🍷' };
+/* ИКОНКИ ПО ТВОЕМУ СПИСКУ */
+const POS_ICONS={
+  'Зона окна':'🪟',
+  '5-я линия':'📚',                 /* книги */
+  'Столы 7, 8, 9':'☕️',            /* стол в кафе */
+  'Столы 10, 11, 12':'🍽️',         /* столы в кафе */
+  'Подиум':'🪜',                    /* лестница */
+  'МБЗ':'🪑',
+  'Большой ВИП':'🔥',               /* камин */
+  'Малый ВИП':'📚',                 /* полка с книгами */
+  'Каюта':'⚓',                     /* штурвал → ближайшая иконка якорь */
+  'Лиенда':'💧',                    /* водопад */
+  'Веранда 1':'🌿',
+  'Веранда 2':'🌿',
+  'Лофт':'🧱',                      /* кирпичная стена */
+  'Винная комната':'🍷'
+};
 
 const CANON_HALLS=[
   {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
@@ -182,13 +201,12 @@ const BANQUET_TYPES={'ДР':'🎉 ДР','Свадьба':'💍 Свадьба','
 const PRIMARY_NAMES=['Виктор','Элона','Полина','Наталья Ч.','Настя','Роман'];
 const SECONDARY_NAMES=['Игорь','Катя','Юля','Наташа В.','Вова','Маша','Иван','Наташа Величко'];
 
-/* ====== ВСПОМОГАТЕЛЬНОЕ ====== */
+/* ====== утилы ====== */
 const $=sel=>document.querySelector(sel);
 function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
 function dateKey(){return $('#date').value || todayISO();}
 function weekdayRU(iso){ const d=new Date(iso+'T00:00'); const w=['вс','пн','вт','ср','чт','пт','сб']; return w[d.getDay()]; }
 function fmtDateRU(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y} (${weekdayRU(iso)})`; }
-
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 function purgeOldData(){
@@ -202,7 +220,7 @@ function purgeOldData(){
   });
 }
 
-/* ====== БАЗА ====== */
+/* ====== база ====== */
 function buildDB(){
   const uniq=[...new Set([...PRIMARY_NAMES,...SECONDARY_NAMES])].map(n=>({id:UUID(),name:n}));
   return {
@@ -214,7 +232,7 @@ function buildDB(){
 let db = load() || buildDB();
 purgeOldData(); save();
 
-/* ====== МАППИНГ ====== */
+/* ====== маппинг ====== */
 function hallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
 function dayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
 function ensureSlot(hid,pid){const a=dayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
@@ -233,21 +251,21 @@ function uniqueWaitersAll(){
   return ids;
 }
 
-/* ====== UI элементы ====== */
+/* ====== шаблоны ====== */
 const chipTpl=document.getElementById('chipTpl');
 const hallTpl=document.getElementById('hallTpl');
 const posCardTpl=document.getElementById('posCardTpl');
 
 let selected=null; // {k:'w'|'b', id}
 
-/* ====== Шапка: смена ====== */
+/* ====== шапка: счётчик ====== */
 function renderShiftBadge(){
   const n = uniqueWaitersAll().size;
   db.shiftSize[dateKey()] = n; save();
   $('#shiftBadge').textContent = `👥 В смене: ${n}`;
 }
 
-/* ====== Шапка: официанты ====== */
+/* ====== шапка: официанты ====== */
 function renderWaiterChip(w, isSecondary=false){
   const chip=chipTpl.content.firstElementChild.cloneNode(true);
   chip.querySelector('.name').textContent=w.name;
@@ -260,7 +278,7 @@ function renderWaiterChip(w, isSecondary=false){
   chip.addEventListener('click',e=>{
     if(e.target.closest('.edit')||e.target.closest('.del')) return;
     selected=(selected && selected.k==='w' && selected.id===w.id)?null:{k:'w',id:w.id};
-    renderBanquetBar(); renderWaiters(); // подсветка
+    renderBanquetBar(); renderWaiters();
   },{passive:true});
 
   chip.querySelector('.edit').addEventListener('click',e=>{
@@ -280,11 +298,9 @@ function renderWaiterChip(w, isSecondary=false){
     save(); renderAll();
   });
 
-  // авто «Усиление» при первом добавлении из 2-й смены
   chip.dataset.secondary = isSecondary ? '1' : '0';
   return chip;
 }
-
 function renderWaiters(){
   const rowP=$('#rowPrimary'), rowS=$('#rowSecondary');
   rowP.innerHTML=''; rowS.innerHTML='';
@@ -295,7 +311,7 @@ function renderWaiters(){
   SECONDARY_NAMES.forEach(n=>{ const w=map[n]; if(w) rowS.appendChild(renderWaiterChip(w,true)); });
 }
 
-/* ====== Банкеты ====== */
+/* ====== банкеты ====== */
 function renderBanquetBar(){
   const bar=$('#banquetBar'); bar.innerHTML='';
   const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
@@ -324,7 +340,7 @@ function deleteBanquet(id){
   save(); renderColumns();
 }
 
-/* ====== Колонки ====== */
+/* ====== колонки ====== */
 const hallBriefEls=new Map(), hallTotalEls=new Map();
 function renderColumns(){
   $('#col1').innerHTML=''; $('#col2').innerHTML=''; $('#col3').innerHTML='';
@@ -338,7 +354,6 @@ function renderColumns(){
   mountHall(map['Винная комната'], $('#col3'));
   updateAllHallTotals(); renderShiftBadge();
 }
-
 function mountHall(h,into){
   if(!h) return;
   const sec=hallTpl.content.firstElementChild.cloneNode(true);
@@ -411,7 +426,6 @@ function mountHall(h,into){
 
   into.appendChild(sec);
 }
-
 function refreshHallBrief(hid){
   const briefEl=hallBriefEls.get(hid); if(!briefEl) return;
   const hall=db.halls.find(x=>x.id===hid); if(!hall){ briefEl.textContent=''; briefEl.classList.remove('has'); return; }
@@ -449,10 +463,9 @@ function refreshHallBrief(hid){
     totalEl.textContent = uniq.size ? (countsByPos.join(', ') + ` — Всего: ${uniq.size}`) : '';
   }
 }
-
 function updateAllHallTotals(){ db.halls.forEach(h=> refreshHallBrief(h.id)); }
 
-/* ====== Slot item ====== */
+/* ====== slot item ====== */
 function renderAssign(name, notesArr, bg, fg, onRemove){
   const el=document.createElement('div'); el.className='assign';
   if(bg){ el.style.background=bg; el.style.borderColor=bg; }
@@ -468,7 +481,7 @@ function renderAssign(name, notesArr, bg, fg, onRemove){
   return el;
 }
 
-/* ====== Комменты ====== */
+/* ====== комменты ====== */
 function openCommentsModal(wid, wname){
   const presets=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете','Усиление'];
   const wrap=document.createElement('div'); wrap.className='modal';
@@ -504,7 +517,7 @@ function openCommentsModal(wid, wname){
   redraw();
 }
 
-/* ====== Банкетная модалка ====== */
+/* ====== модалка банкет ====== */
 function openBanquetModal(existing){
   const isEdit=!!existing;
   const wrap=document.createElement('div'); wrap.className='modal';
@@ -530,37 +543,64 @@ function openBanquetModal(existing){
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
 }
 
-/* ====== Сервисные ====== */
+/* ====== вспомогательные ====== */
 function fillPick(selectEl){
   selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
   db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
 }
 function renderShiftAndTotals(){ updateAllHallTotals(); renderShiftBadge(); }
 
-/* ====== Экспорт ====== */
-function exportText(){
-  const iso=dateKey();
-  const lines=['Добрый день', `Распределение — ${fmtDateRU(iso)} · В смене (${uniqueWaitersAll().size}) человек`];
+/* ====== экспорт (общий формат) ====== */
+function exportTextWhatsApp(){
+  const iso = dateKey();
+  const n = uniqueWaitersAll().size;
+  const lines = [
+    'Добрый день, друзья!',
+    `📅 ${fmtDateRU(iso)}`,
+    `В смене ${n} человек. 🕺`,
+    ''
+  ];
+  // Банкеты строго после количества
+  const b = banquetsForDay();
+  if(b.length===0){
+    lines.push('Банкеты: 0', '');
+  }else{
+    const list = b.map(x=>{
+      const title = (x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
+      return `${title} · ${x.people}` + (x.note?` (${x.note})`:'');
+    }).join(' | ');
+    lines.push('Банкеты: '+list, '');
+  }
+
   const ass=dayAss();
   db.halls.forEach(h=>{
     const hasAny=(h.positions||[]).some(p=> (ass[h.id]&&ass[h.id][p.id]||[]).length>0 );
     if(!hasAny) return;
-    lines.push('\n'+(HALL_ICONS[h.name]||'')+' '+h.name+':');
+    lines.push(`${(HALL_ICONS[h.name]||'')} *${h.name}*:`);
+
     h.positions.forEach(p=>{
       const arr=(ass[h.id]&&ass[h.id][p.id])||[];
       if(!arr.length) return;
       const people=arr.map(e=>{
-        if(e.k==='w'){ const w=waiterById(e.id); const cm=getNotes(e.id); return w?(w.name + (cm.length? ' ('+cm.join(', ')+')':'')):'—'; }
-        const b=banquetById(e.id); if(!b) return 'Банкет';
-        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
-        return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
+        if(e.k==='w'){
+          const w=waiterById(e.id); const cm=getNotes(e.id);
+          return w ? (cm.length? `${w.name} _(${cm.join(', ')})_` : w.name) : '—';
+        }else{
+          const x=banquetById(e.id); if(!x) return 'Банкет';
+          const title=(x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
+          return x.note ? `${title} · ${x.people} _(${x.note})_` : `${title} · ${x.people}`;
+        }
       }).join(' | ');
-      lines.push('• '+(POS_ICONS[p.name]||'')+' '+p.name+': '+people);
+      lines.push(`• ${(POS_ICONS[p.name]||'')} ${p.name}: ${people}`);
     });
+    lines.push('');
   });
-  lines.push('\nПожелание: Всем хорошего дня и больших чаевых.');
+
+  lines.push('Всем хорошей смены и больших чаевых! 💵');
   return lines.join('\n');
 }
+function exportTextTelegram(){ return exportTextWhatsApp(); }
+function exportTextEmail(){ return exportTextWhatsApp(); }
 
 /* ====== Сброс дня ====== */
 function resetCurrentDate(){
@@ -571,30 +611,84 @@ function resetCurrentDate(){
   delete db.shiftSize[k];
 }
 
+/* ====== Статистика за месяц ====== */
+function openStatsModal(){
+  // период: последние 30 дней от выбранной даты
+  const end = new Date(dateKey()+'T00:00');
+  const start = new Date(end); start.setDate(end.getDate()-29); // 30 дней
+  const within=(iso)=>{ const d=new Date(iso+'T00:00'); return d>=start && d<=end; };
+
+  const counts = {}; // waiterId -> {shifts:Set(dates), byHall:{hid:count}}
+  Object.keys(db.assignments).filter(within).forEach(iso=>{
+    const halls=db.assignments[iso]||{};
+    for(const hid in halls){
+      for(const pid in halls[hid]){
+        (halls[hid][pid]||[]).forEach(e=>{
+          if(e.k!=='w') return;
+          counts[e.id] ||= {shifts:new Set(), byHall:{}};
+          counts[e.id].shifts.add(iso);
+          counts[e.id].byHall[hid] = (counts[e.id].byHall[hid]||0)+1;
+        });
+      }
+    }
+  });
+
+  const wrap=document.createElement('div'); wrap.className='modal';
+  const rows = Object.keys(counts).map(wid=>{
+    const w=waiterById(wid); const hBy=counts[wid].byHall;
+    const total=counts[wid].shifts.size;
+    // топ-3 залов
+    const top = Object.entries(hBy)
+      .map(([hid,c])=>({name:db.halls.find(h=>h.id===hid)?.name||'?', c}))
+      .sort((a,b)=>b.c-a.c).slice(0,3)
+      .map(x=>x.name.replace(/ \(.*?\)/,'')).join(', ');
+    return `<tr><td>${w?.name||'?'}</td><td style="text-align:center">${total}</td><td>${top||'—'}</td></tr>`;
+  }).sort((a,b)=> a.localeCompare(b)).join('');
+
+  wrap.innerHTML='<div class="dialog">'+
+    '<div style="font-weight:900">📊 Статистика за 30 дней</div>'+
+    `<div style="font-size:11px;color:#475569;margin-top:-4px">Период: ${start.toLocaleDateString('ru-RU')} — ${end.toLocaleDateString('ru-RU')}</div>`+
+    '<div style="max-height:60vh;overflow:auto;margin-top:6px">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead><tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 2px">Официант</th><th style="text-align:center;border-bottom:1px solid #e5e7eb;padding:6px 2px">Смен</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 2px">Чаще в залах</th></tr></thead>'+
+        `<tbody>${rows || '<tr><td colspan="3" style="padding:8px;color:#64748b">Нет данных за период</td></tr>'}</tbody>`+
+      '</table>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px"><button id="stClose">Закрыть</button></div>'+
+  '</div>';
+  document.body.appendChild(wrap);
+  wrap.querySelector('#stClose').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+}
+
 /* ====== РЕНДЕР ВСЕГО ====== */
 function renderAll(){
   renderBanquetBar();
   renderWaiters();
   renderColumns();
-  renderShiftAndTotals();
 }
 
-/* ====== ИНИЦ ====== */
+/* ====== INIT ====== */
 document.addEventListener('DOMContentLoaded', function(){
   showOK();
 
   const dateEl=document.getElementById('date');
-  dateEl.value=todayISO();             // всегда ставим сегодняшнюю дату
-  resetCurrentDate(); save();          // чистый лист на дату
+  // стартуем с сегодняшней даты, НЕ очищая (для истории)
+  dateEl.value = dateEl.value || todayISO();
   renderAll();
+  renderShiftAndTotals();
 
-  // кнопки шапки
+  // переключение даты: просто показываем сохранённое или пустое (без авто-очистки)
+  dateEl.addEventListener('change', ()=>{ renderAll(); renderShiftAndTotals(); });
+
+  // раскрутка 2-й смены
   document.getElementById('toggleSecondary').addEventListener('click',()=>{
     const rowS=$('#rowSecondary'); const open=rowS.style.display==='none';
     rowS.style.display=open?'grid':'none';
     document.getElementById('toggleSecondary').textContent=open?'2-я смена ↑':'2-я смена ↓';
   });
 
+  // добавить официанта
   document.getElementById('addWaiter').addEventListener('click',()=>{
     const wrap=document.createElement('div'); wrap.className='modal';
     wrap.innerHTML='<div class="dialog">'+
@@ -614,22 +708,43 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(()=>input.focus(),0);
   });
 
+  // копировать
   document.getElementById('copy').addEventListener('click', async ()=>{
-    const txt=exportText(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
+    const txt=exportTextWhatsApp(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
   });
 
-  document.getElementById('share').addEventListener('click', async ()=>{
-    const text=exportText(); try{ if(navigator.share){ await navigator.share({title:'Распределение',text}); } else { await navigator.clipboard.writeText(text); alert('Скопировано'); } }catch{}
+  // WhatsApp
+  document.getElementById('shareWA').addEventListener('click', ()=>{
+    const text = exportTextWhatsApp();
+    const urlWeb = 'https://wa.me/?text=' + encodeURIComponent(text);
+    const urlApp = 'whatsapp://send?text=' + encodeURIComponent(text);
+    const a = document.createElement('a'); a.href=urlApp; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ window.open(urlWeb, '_blank'); a.remove(); }, 300);
   });
 
+  // Telegram
+  document.getElementById('shareTG').addEventListener('click', ()=>{
+    const text = exportTextTelegram();
+    const url = 'https://t.me/share/url?text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
+  });
+
+  // Email
+  document.getElementById('shareMail').addEventListener('click', ()=>{
+    const text = exportTextEmail();
+    const subj = 'Распределение — ' + fmtDateRU(dateKey());
+    const url = 'mailto:?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(text);
+    window.location.href = url;
+  });
+
+  // очистить день
   document.getElementById('resetDay').addEventListener('click',()=>{
     if(!confirm('Очистить все данные на выбранную дату?')) return;
-    resetCurrentDate(); save(); renderAll();
+    resetCurrentDate(); save(); renderAll(); renderShiftAndTotals();
   });
 
-  dateEl.addEventListener('change', ()=>{
-    resetCurrentDate(); save(); renderAll();
-  });
+  // статистика
+  document.getElementById('statsBtn').addEventListener('click', openStatsModal);
 });
 })();</script>
 </body>
