@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Распределение — компакт+ с брифами и сменой</title>
+<title>Распределение — компакт+ со сменой</title>
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc; --badge:#fde047; --badgeText:#1f2937 }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -17,8 +17,20 @@
   button{cursor:pointer}
   .btn-acc{border-color:#c7d2fe}
   .btn-danger{border-color:#fecaca}
-  .badge{display:none;margin-top:2px;align-self:flex-start;background:var(--badge);color:var(--badgeText);border-radius:999px;padding:3px 8px;font-weight:700;font-size:11px}
-  .badge.show{display:inline-flex}
+
+  /* Плашка смены — ВСЕГДА видна */
+  .badge{
+    display:inline-flex;
+    margin-top:2px;
+    align-self:flex-start;
+    background:var(--badge);
+    color:var(--badgeText);
+    border-radius:999px;
+    padding:3px 8px;
+    font-weight:700;
+    font-size:11px;
+    cursor:pointer;
+  }
 
   .center{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
   .b-chip{border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:#fff;display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:12px;cursor:pointer}
@@ -83,7 +95,7 @@
       <div class="field">
         <label for="date">Дата</label>
         <input id="date" type="date" />
-        <span id="shiftBadge" class="badge" title="Изменить количество"></span>
+        <span id="shiftBadge" class="badge" title="Изменить количество">👥 В смене: —</span>
       </div>
       <button id="setShift" class="btn-acc" title="Количество человек в смене">👥 Кол-во</button>
       <button id="addWaiter" class="btn-acc">Добавить официанта</button>
@@ -142,7 +154,7 @@
 
 /* ====== БАЗА ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v4'; // новая версия (со сменой и авто-сбросом по дате)
+const STORAGE_KEY='rota-compact-v5'; // версия с постоянной плашкой смены
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 const CANON_HALLS=[
   {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
@@ -204,12 +216,9 @@ function fillPick(selectEl){
 }
 
 function renderShiftBadge(){
-  const n=shiftForDay();
-  if(n==null){ shiftBadge.classList.remove('show'); shiftBadge.textContent=''; return; }
-  shiftBadge.textContent = `👥 В смене: ${n}`;
-  shiftBadge.classList.add('show');
+  const n = shiftForDay();
+  shiftBadge.textContent = `👥 В смене: ${n != null ? n : '—'}`; // всегда видна
 }
-
 function openShiftModal(){
   const wrap=document.createElement('div'); wrap.className='modal';
   wrap.innerHTML='<div class="dialog">'+
@@ -224,6 +233,8 @@ function openShiftModal(){
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
   setTimeout(()=>inp.focus(),0);
 }
+document.getElementById('setShift').onclick=openShiftModal;
+shiftBadge.onclick=openShiftModal;
 
 function renderWaiters(){
   waiterRow.innerHTML='';
@@ -268,7 +279,7 @@ function renderBanquetBar(){
   banquetBar.appendChild(addBtn);
 
   banquetsForDay().forEach(b=>{
-    const meta=BANQUET_TYPES[b.type]||BANQUЕТ_TYPES['Другой'];
+    const meta=BANQUET_TYPES[b.type]||BANQUET_TYPES['Другой'];
     const chip=document.createElement('div'); chip.className='b-chip'; if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
     const title=(b.type==='Другой' && b.other)? `Другое: ${b.other}` : meta;
     chip.textContent = `${title} · ${b.people}`;
@@ -389,7 +400,7 @@ function refreshHallBrief(hid){
         const cm=getNotes(e.id); return w.name + (cm.length? ` (${cm.join(', ')})` : '');
       }else{
         const b=banquetById(e.id); if(!b) return 'Банкет';
-        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUЕТ_TYPES[b.type]||'Банкет');
+        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
         return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
       }
     }).join(', ');
@@ -483,9 +494,6 @@ function openBanquetModal(existing){
 }
 
 /* ====== Верхние кнопки ====== */
-document.getElementById('setShift').onclick=openShiftModal;
-shiftBadge.onclick=openShiftModal;
-
 document.getElementById('addWaiter').onclick=()=>{
   const wrap=document.createElement('div'); wrap.className='modal';
   wrap.innerHTML='<div class="dialog">'+
@@ -511,7 +519,6 @@ document.getElementById('copy').onclick=async()=>{
 document.getElementById('share').onclick=async()=>{
   const text=exportText(); try{ if(navigator.share){ await navigator.share({title:'Распределение',text}); } else { await navigator.clipboard.writeText(text); alert('Скопировано'); } }catch{}
 };
-
 document.getElementById('resetDay').onclick=()=>{
   if(!confirm('Очистить назначения на эту дату?')) return;
   forceResetCurrentDate(); save(); renderAll();
@@ -521,7 +528,7 @@ document.getElementById('hardReset').onclick=()=>{
   localStorage.removeItem(STORAGE_KEY); location.reload();
 };
 document.getElementById('date').onchange=()=>{
-  // ТРЕБУЕМОЕ ПОВЕДЕНИЕ: при смене дня всё сбрасывать
+  // При смене дня — полный сброс
   forceResetCurrentDate(); save(); renderAll();
 };
 
@@ -537,7 +544,7 @@ function forceResetCurrentDate(){
 /* ====== Экспорт ====== */
 function exportText(){
   const iso=dateKey();
-  const head = `Распределение — ${fmtDateRU(iso)}` + (shiftForDay()!=null? ` · Смена: ${shiftForDay()}` : '');
+  const head = `Распределение — ${fmtDateRU(iso)} · Смена: ${shiftForDay()!=null?shiftForDay():'—'}`;
   const lines=[head];
   const ass=getDayAss();
   db.halls.forEach(h=>{
@@ -554,11 +561,11 @@ function exportText(){
       lines.push('• '+p.name+': '+people+'  ('+arr.length+')');
     });
   });
-  const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> ( (b.type==='Другой'&&b.other?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет')) + ' · '+b.people)).join('; ')); }
+  const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> ( (b.type==='Другой'&&b.other?('Другое: '+b.other):(BANQUЕТ_TYPES[b.type]||'Банкет')) + ' · '+b.people)).join('; ')); }
   return lines.join('\n');
 }
 
-/* ====== РЕНДЕР ====== */
+/* ====== Старт ====== */
 function renderAll(){ renderShiftBadge(); renderBanquetBar(); renderWaiters(); renderColumns(); refreshAllBriefs(); }
 dateEl.value=todayISO();
 forceResetCurrentDate(); // при первом запуске — чистый день
