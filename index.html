@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Распределение — компакт+ (сводки)</title>
+<title>Распределение — компакт+ с итогами</title>
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -37,16 +37,17 @@
   summary{list-style:none;display:flex;gap:6px;align-items:flex-start;cursor:pointer}
   summary::-webkit-details-marker{display:none}
   .hall-title{font-weight:900;font-size:12px}
-  .hall-summary{margin-left:auto; color:#475569; font-size:11px; display:flex; flex-direction:column; gap:2px; max-width:65%; overflow:hidden}
-  .hall-line{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .hall-brief{margin-left:auto;color:var(--muted);font-size:10px;line-height:1.25;max-width:65%;display:none;white-space:normal}
+  details[open] .hall-brief{display:none}
+  details.panel:not([open]) .hall-brief.has{display:block}
 
   .pos-grid{display:grid;gap:6px;margin-top:6px}
   .pos-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
   .pos-head{display:flex;gap:6px;align-items:center}
   .pos-title{font-weight:800;font-size:12px}
   .counter{margin-left:auto;color:#475569;font-size:11px}
-
   .slot{display:flex;flex-wrap:wrap;gap:4px;border:1px dashed #e2e8f0;border-radius:8px;padding:6px;min-height:32px}
+
   .assign{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:#fafafa}
   .assign .top{display:flex;gap:6px;align-items:center}
   .assign .w-name{font-weight:800;font-size:12px}
@@ -98,6 +99,7 @@
     <div class="col" id="col3"></div>
   </div>
 
+  <!-- шаблоны -->
   <template id="chipTpl">
     <div class="chip" tabindex="0">
       <span class="name"></span>
@@ -111,7 +113,7 @@
     <details class="panel" open>
       <summary>
         <span class="hall-title"></span>
-        <span class="hall-summary"></span>
+        <span class="hall-brief"></span>
       </summary>
       <div class="pos-grid"></div>
     </details>
@@ -133,10 +135,11 @@
 
 <script>
 'use strict';
-/* ====== ДАННЫЕ/УТИЛЫ ====== */
+
+/* ====== БАЗА ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v3-summaries';
-const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
+const STORAGE_KEY='rota-compact-v3'; // новая версия
+const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5N9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']].map(([a,b])=>[a,b]);
 const CANON_HALLS=[
   {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
   {name:'Малый (банкетный) зал', positions:['МБЗ']},
@@ -151,17 +154,20 @@ function buildDB(){
   return {
     halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
     waiters:['Игорь','Виктор','Роман','Элона','Полина','Ксения','Наталья Ч.','Наталья В.','Анастасия','Екатерина'].map(n=>({id:UUID(),name:n})),
-    assignments:{}, notes:{}, banquets:{}
+    assignments:{},  // date -> hallId -> posId -> [{k:'w'|'b', id}]
+    notes:{},        // date -> waiterId -> [tags]
+    banquets:{}      // date -> [{id,type,people,other?,note?}]
   };
 }
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 let db = load() || buildDB();
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 
+/* ====== УТИЛЫ ====== */
 const dateEl=document.getElementById('date');
 function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
 function dateKey(){return dateEl.value || todayISO();}
-function hallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
+function getHallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
 function getDayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
 function ensureSlot(hid,pid){const a=getDayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
 function notesForDay(){const k=dateKey(); if(!db.notes[k]) db.notes[k]={}; return db.notes[k];}
@@ -172,22 +178,18 @@ function waiterById(id){return db.waiters.find(w=>w.id===id)}
 function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
 function banquetsForDay(){const k=dateKey(); if(!db.banquets[k]) db.banquets[k]=[]; return db.banquets[k];}
 function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
-function entityLabel(e){
-  if(e.k==='w'){
-    const w=waiterById(e.id); if(!w) return '—';
-    const cm=getNotes(e.id); return w.name + (cm.length? ` (${cm.join(', ')})` : '');
-  }else{
-    const b=banquetById(e.id); if(!b) return 'Банкет';
-    const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
-    return `${title} · ${b.people}` + (b.note? ` (${b.note})`:'');
-  }
-}
 
-/* ====== Шапка: банкеты + официанты ====== */
+/* ====== ШАПКА ====== */
 const waiterRow=document.getElementById('waiterRow');
 const chipTpl=document.getElementById('chipTpl');
 const banquetBar=document.getElementById('banquetBar');
 let selected=null; // {k:'w'|'b', id}
+
+function fillAllPicks(){ document.querySelectorAll('.pick').forEach(fillPick); }
+function fillPick(selectEl){
+  selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
+  db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
+}
 
 function renderWaiters(){
   waiterRow.innerHTML='';
@@ -218,7 +220,7 @@ function renderWaiters(){
       for(const day in db.notes){ if(db.notes[day]) delete db.notes[day][w.id]; }
       db.waiters=db.waiters.filter(x=>x.id!==w.id);
       if(selected && selected.k==='w' && selected.id===w.id) selected=null;
-      save(); renderWaiters(); renderColumns();
+      save(); renderWaiters(); renderColumns(); refreshAllBriefs();
     });
 
     waiterRow.appendChild(chip);
@@ -251,43 +253,35 @@ function deleteBanquet(id){
   const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
   const ass=getDayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
   if(selected && selected.k==='b' && selected.id===id) selected=null;
-  save(); renderBanquetBar(); renderColumns();
+  save(); renderBanquetBar(); renderColumns(); refreshAllBriefs();
 }
 
-/* ====== Колонки (сводки в summary) ====== */
+/* ====== КОЛОНКИ + БРИФЫ ====== */
 const hallTpl=document.getElementById('hallTpl'), posCardTpl=document.getElementById('posCardTpl');
 const col1=document.getElementById('col1'), col2=document.getElementById('col2'), col3=document.getElementById('col3');
+const hallBriefEls=new Map(); // hid -> span element
 
 function renderColumns(){
   col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
-  const map=hallsByName();
+  hallBriefEls.clear();
+  const map=getHallsByName();
+
   ['Основной зал','Малый (банкетный) зал'].forEach(name=> mountHall(map[name], col1));
-  ['ВИП-комнаты','Лофт'].forEach(name=> mountHall(map[name], col2));      // Лофт под ВИП
+  ['ВИП-комнаты','Лофт'].forEach(name=> mountHall(map[name], col2));        // ВИП + Лофт
   ['Веранда','Винная комната'].forEach(name=> mountHall(map[name], col3));
+  refreshAllBriefs();
 }
 
 function mountHall(h,into){
   if(!h) return;
   const sec=hallTpl.content.firstElementChild.cloneNode(true);
-  const sumWrap=sec.querySelector('.hall-summary');
+  sec.dataset.hid=h.id;
   sec.querySelector('.hall-title').textContent=h.name;
+  const briefEl=sec.querySelector('.hall-brief');
+  hallBriefEls.set(h.id, briefEl);
   const grid=sec.querySelector('.pos-grid');
 
-  function updateSummary(){
-    const ass=getDayAss(); const lines=[];
-    (h.positions||[]).forEach(p=>{
-      const arr=(ass[h.id]&&ass[h.id][p.id])||[];
-      if(!arr.length) return;
-      const items=arr.map(entityLabel).join(', ');
-      lines.push(`${p.name} — ${items}`);
-    });
-    sumWrap.innerHTML='';
-    if(!lines.length){ sumWrap.style.display='none'; return; }
-    sumWrap.style.display='flex';
-    lines.forEach(t=>{ const line=document.createElement('div'); line.className='hall-line'; line.textContent=t; sumWrap.appendChild(line); });
-  }
-
-  (h.positions||[]).forEach(p=>{
+  h.positions.forEach(p=>{
     const card=posCardTpl.content.firstElementChild.cloneNode(true);
     card.querySelector('.pos-title').textContent=p.name;
     const counter=card.querySelector('.counter');
@@ -315,7 +309,7 @@ function mountHall(h,into){
         }
       });
       counter.textContent=String(arr.length);
-      updateSummary();
+      refreshHallBrief(h.id); // обновить бриф зала
     };
 
     function assign(hid,pid,ent){
@@ -333,11 +327,9 @@ function mountHall(h,into){
       if(!selected) return;
       assign(h.id,p.id, selected);
     });
-
     addBtn.addEventListener('click',e=>{
       e.stopPropagation();
-      const wid=pick.value;
-      if(!wid) return;
+      const wid=pick.value; if(!wid) return;
       assign(h.id,p.id,{k:'w',id:wid});
       pick.value='';
     });
@@ -347,15 +339,38 @@ function mountHall(h,into){
   });
 
   into.appendChild(sec);
-  // сразу посчитать сводку на текущие данные
-  (function seedSummary(){ const ass=getDayAss(); let any=false; (h.positions||[]).forEach(p=>{ const arr=(ass[h.id]&&ass[h.id][p.id])||[]; if(arr.length) any=true; }); if(any){ const ev=new Event('dummy'); /* просто обновим */ } })();
 }
 
-/* ====== Вспомогательное ====== */
-function fillPick(selectEl){
-  selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
-  db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
+function refreshHallBrief(hid){
+  const briefEl=hallBriefEls.get(hid); if(!briefEl) return;
+  const hall=db.halls.find(x=>x.id===hid); if(!hall){ briefEl.textContent=''; briefEl.classList.remove('has'); return; }
+  const ass=getDayAss();
+  const parts=[];
+  (hall.positions||[]).forEach(p=>{
+    const arr=(ass[hid]&&ass[hid][p.id])||[];
+    if(!arr.length) return;
+    const people = arr.map(e=>{
+      if(e.k==='w'){
+        const w=waiterById(e.id); if(!w) return '—';
+        const cm=getNotes(e.id); return w.name + (cm.length? ` (${cm.join(', ')})` : '');
+      }else{
+        const b=banquetById(e.id); if(!b) return 'Банкет';
+        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
+        return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
+      }
+    }).join(', ');
+    parts.push(`${p.name}: ${people}`);
+  });
+  const txt=parts.join(' • ');
+  briefEl.textContent=txt;
+  briefEl.classList.toggle('has', !!txt);
 }
+
+function refreshAllBriefs(){
+  db.halls.forEach(h=> refreshHallBrief(h.id));
+}
+
+/* ====== РЕНДЕР ИМЕНИ В СЛОТЕ ====== */
 function renderAssign(name, notesArr, bg, fg, onRemove){
   const el=document.createElement('div'); el.className='assign';
   if(bg){ el.style.background=bg; el.style.borderColor=bg; }
@@ -371,17 +386,17 @@ function renderAssign(name, notesArr, bg, fg, onRemove){
   return el;
 }
 
-/* ====== Комментарии и банкеты (как раньше) ====== */
+/* ====== Комментарии ====== */
 function openCommentsModal(wid, wname){
   const presets=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете'];
   const wrap=document.createElement('div'); wrap.className='modal';
   wrap.innerHTML = '<div class="dialog">'+
-      '<div style="font-weight:900">Комментарии — '+wname+'</div>'+
-      '<div id="presetBox" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
-      '<div id="tagList" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
-      '<div class="row"><label>Новый</label><input id="cInp" placeholder="например: до 18:00"/></div>'+
-      '<div class="row" style="justify-content:flex-end"><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>'+
-    '</div>';
+    '<div style="font-weight:900">Комментарии — '+wname+'</div>'+
+    '<div id="presetBox" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
+    '<div id="tagList" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
+    '<div class="row"><label>Новый</label><input id="cInp" placeholder="например: до 18:00"/></div>'+
+    '<div class="row" style="justify-content:flex-end"><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>'+
+  '</div>';
   document.body.appendChild(wrap);
 
   const box=wrap.querySelector('#presetBox'), list=wrap.querySelector('#tagList'), inp=wrap.querySelector('#cInp');
@@ -391,22 +406,23 @@ function openCommentsModal(wid, wname){
       const tag=document.createElement('span');
       tag.style.cssText='font-size:11px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:6px';
       const x=document.createElement('b'); x.textContent='×'; x.style.cssText='cursor:pointer;color:#991b1b';
-      x.onclick=()=>{ delNote(wid,i); redraw(); renderColumns(); renderWaiters(); };
+      x.onclick=()=>{ delNote(wid,i); redraw(); renderColumns(); refreshAllBriefs(); renderWaiters(); };
       tag.appendChild(document.createTextNode(t)); tag.appendChild(x); list.appendChild(tag);
     });
   }
   presets.forEach(p=>{
     const b=document.createElement('button'); b.textContent=p; b.className='btn-acc';
     b.style.cssText='border:1px dashed #cbd5e1;border-radius:999px;padding:4px 8px;background:#fff;font-size:11px';
-    b.onclick=()=>{ const cur=getNotes(wid); const i=cur.indexOf(p); if(i===-1) addNote(wid,p); else delNote(wid,i); redraw(); renderColumns(); renderWaiters(); };
+    b.onclick=()=>{ const cur=getNotes(wid); const i=cur.indexOf(p); if(i===-1) addNote(wid,p); else delNote(wid,i); redraw(); renderColumns(); refreshAllBriefs(); renderWaiters(); };
     box.appendChild(b);
   });
-  wrap.querySelector('#cAdd').onclick=()=>{ const v=(inp.value||'').trim(); if(!v) return; addNote(wid,v); inp.value=''; redraw(); renderColumns(); renderWaiters(); };
+  wrap.querySelector('#cAdd').onclick=()=>{ const v=(inp.value||'').trim(); if(!v) return; addNote(wid,v); inp.value=''; redraw(); renderColumns(); refreshAllBriefs(); renderWaiters(); };
   wrap.querySelector('#cClose').onclick=()=>wrap.remove();
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
   redraw();
 }
 
+/* ====== Банкетная модалка ====== */
 function openBanquetModal(existing){
   const isEdit=!!existing;
   const wrap=document.createElement('div'); wrap.className='modal';
@@ -426,7 +442,7 @@ function openBanquetModal(existing){
     const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите число персон.');
     if(isEdit){ existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim(); }
     else { banquetsForDay().push({id:UUID(), people:n, type:type.value, other:(other&&other.value||'').trim(), note:(note.value||'').trim()}); }
-    save(); renderBanquetBar(); renderColumns(); wrap.remove();
+    save(); renderBanquetBar(); renderColumns(); refreshAllBriefs(); wrap.remove();
   };
   wrap.querySelector('#bnClose').onclick=()=>wrap.remove();
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
@@ -445,9 +461,7 @@ document.getElementById('addWaiter').onclick=()=>{
   wrap.querySelector('#wSave').onclick=()=>{
     const name=(input.value||'').trim(); if(!name) return;
     if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже есть.');
-    db.waiters.push({id:UUID(), name}); save(); renderWaiters();
-    document.querySelectorAll('.pick').forEach(fillPick);
-    wrap.remove();
+    db.waiters.push({id:UUID(), name}); save(); renderWaiters(); fillAllPicks(); wrap.remove();
   };
   wrap.querySelector('#wClose').onclick=()=>wrap.remove();
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
@@ -462,13 +476,13 @@ document.getElementById('share').onclick=async()=>{
 };
 document.getElementById('resetDay').onclick=()=>{
   if(!confirm('Очистить назначения на эту дату?')) return;
-  const k=dateKey(); db.assignments[k]={}; db.notes[k]={}; save(); renderColumns(); renderWaiters();
+  const k=dateKey(); db.assignments[k]={}; db.notes[k]={}; save(); renderColumns(); refreshAllBriefs(); renderWaiters();
 };
 document.getElementById('hardReset').onclick=()=>{
   if(!confirm('Полный сброс всех данных?')) return;
   localStorage.removeItem(STORAGE_KEY); location.reload();
 };
-document.getElementById('date').onchange=()=>{ renderColumns(); renderWaiters(); };
+document.getElementById('date').onchange=()=>{ renderColumns(); refreshAllBriefs(); renderWaiters(); };
 
 /* ====== Экспорт ====== */
 function exportText(){
@@ -476,10 +490,15 @@ function exportText(){
   const ass=getDayAss();
   db.halls.forEach(h=>{
     lines.push('\n'+h.name+':');
-    (h.positions||[]).forEach(p=>{
+    h.positions.forEach(p=>{
       const arr=(ass[h.id]&&ass[h.id][p.id])||[];
-      if(!arr.length){ lines.push('• '+p.name+': — (0)'); return; }
-      const people=arr.map(entityLabel).join(', ');
+      if(!arr.length){ lines.push('• '+p.name+': —'); return; }
+      const people=arr.map(e=>{
+        if(e.k==='w'){ const w=waiterById(e.id); const cm=getNotes(e.id); return w?(w.name + (cm.length? ' ('+cm.join(', ')+')':'')):'—'; }
+        const b=banquetById(e.id); if(!b) return 'Банкет';
+        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
+        return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
+      }).join(' | ');
       lines.push('• '+p.name+': '+people+'  ('+arr.length+')');
     });
   });
@@ -488,8 +507,8 @@ function exportText(){
 }
 
 /* ====== Старт ====== */
-function renderAll(){ renderBanquetBar(); renderWaiters(); renderColumns(); }
-dateEl.value = todayISO();
+function renderAll(){ renderBanquetBar(); renderWaiters(); renderColumns(); refreshAllBriefs(); }
+dateEl.value=todayISO();
 renderAll();
 </script>
 </body>
