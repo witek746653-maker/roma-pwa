@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Распределение — компакт</title>
+<title>Распределение — компакт+</title>
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:12px/1.25 system-ui,-apple-system,Segoe UI,Roboto}
+
   /* Шапка */
   .header{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:1fr;gap:6px;padding:6px;border-bottom:1px solid var(--border);background:#fff}
   .left{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -16,6 +17,15 @@
   input[type="date"],button{border:1px solid var(--border);background:#fff;border-radius:8px;min-height:28px;padding:4px 8px;font-size:12px}
   button{cursor:pointer}
   .btn-acc{border-color:#c7d2fe}
+  .btn-danger{border-color:#fecaca}
+
+  /* Банкетная панель (по центру) */
+  .center{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+  .b-chip{border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:#fff;display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:12px;cursor:pointer}
+  .b-chip.active{outline:2px solid rgba(99,102,241,.25)}
+  .b-actions{display:inline-flex;gap:4px}
+  .icon-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:2px 5px;font-size:11px}
+
   /* Панель официантов (в 2 раза меньше) */
   .waiters{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:4px 6px;overflow-x:auto;padding:2px 0}
   .chip{border:1px solid #c7d2fe;border-radius:999px;padding:4px 8px;background:#eef2ff;color:#0b1e4a;display:inline-flex;gap:6px;align-items:center}
@@ -24,7 +34,8 @@
   .chip .edit{border:1px solid var(--border);border-radius:6px;padding:1px 5px;background:#fff;font-size:11px}
   .chip .del{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;padding:0 4px}
   .chip.active{outline:2px solid rgba(99,102,241,.25)}
-  /* Сетка 3 колонки даже на телефоне */
+
+  /* 3 колонки: 1) Основной+Малый, 2) ВИП+Лофт, 3) Веранда+Винная */
   .columns{display:grid;gap:6px;padding:6px;grid-template-columns:repeat(3,1fr)}
   details.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px}
   summary{list-style:none;display:flex;gap:6px;align-items:center;cursor:pointer}
@@ -35,17 +46,30 @@
   .pos-head{display:flex;gap:6px;align-items:center}
   .pos-title{font-weight:800;font-size:12px}
   .counter{margin-left:auto;color:#475569;font-size:11px}
+
   .slot{display:flex;flex-wrap:wrap;gap:4px;border:1px dashed #e2e8f0;border-radius:8px;padding:6px;min-height:32px}
-  /* Имя внутри зоны — без кружка, цвет как у кнопки */
-  .assign{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:3px 8px;background:#fafafa}
+
+  /* Элемент в зоне — без кружка, вертикальная компоновка (имя + комментарий) */
+  .assign{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:#fafafa}
+  .assign .top{display:flex;gap:6px;align-items:center}
   .assign .w-name{font-weight:800;font-size:12px}
-  .assign .w-note{font-size:10px;color:#64748b}
   .assign .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
+  .assign .w-note{font-size:10px;color:#64748b}
+
   /* Дропдаун выбора имени в каждой зоне */
   .adder{display:flex;gap:6px;align-items:center}
   .adder select{border:1px solid var(--border);border-radius:8px;min-height:26px;padding:2px 6px;font-size:12px;max-width:100%}
   .adder .addBtn{border:1px solid #c7d2fe;background:#eef2ff;border-radius:8px;min-height:26px;padding:2px 8px;font-size:12px;cursor:pointer}
-  /* Очень компактный режим, чтобы всё влезло */
+
+  /* Модалка */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;padding:10px;z-index:50}
+  .dialog{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;min-width:min(96vw,420px);display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;gap:6px;align-items:center}
+  .row>label{min-width:120px;color:#64748b;font-size:12px}
+  .row>input,.row>select,.row>textarea{flex:1;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12px}
+  .row>textarea{min-height:70px}
+
+  /* Очень компактный режим */
   @media (max-width:430px){
     html,body{font-size:11px}
     input[type="date"],button{min-height:26px;font-size:11px}
@@ -66,9 +90,11 @@
       <button id="addWaiter" class="btn-acc">Добавить официанта</button>
       <button id="share" class="btn-acc">Поделиться</button>
       <button id="copy">Копировать</button>
-      <button id="resetDay">Очистить</button>
+      <button id="resetDay" class="btn-danger">Очистить</button>
       <button id="hardReset" title="Полный сброс">Сбросить всё</button>
     </div>
+
+    <div class="center" id="banquetBar" aria-label="Банкеты"></div>
     <div class="waiters" id="waiterRow" aria-label="Официанты"></div>
   </div>
 
@@ -111,9 +137,10 @@
 
 <script>
 'use strict';
-/* ====== ДАННЫЕ ====== */
+
+/* ====== БАЗА ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v1';
+const STORAGE_KEY='rota-compact-v2'; // новая схема (поддержка банкетов)
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 const CANON_HALLS=[
   {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
@@ -123,34 +150,42 @@ const CANON_HALLS=[
   {name:'Лофт', positions:['Лофт']},
   {name:'Винная комната', positions:['Винная комната']}
 ];
+const BANQUET_TYPES={'ДР':'🎉 ДР','Свадьба':'💍 Свадьба','Корпоратив':'🏢 Корпоратив','Конференция':'📣 Конференция','День памяти':'🕯️ День памяти','Другой':'🏷️ Другое'};
+
 function buildDB(){
   return {
     halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
     waiters:['Игорь','Виктор','Роман','Элона','Полина','Ксения','Наталья Ч.','Наталья В.','Анастасия','Екатерина'].map(n=>({id:UUID(),name:n})),
-    assignments:{}, notes:{}
+    assignments:{}, // date -> hallId -> posId -> [{k:'w'|'b', id:string}]
+    notes:{},       // date -> waiterId -> [tags]
+    banquets:{}     // date -> [{id,type,people,other?,note?}]
   };
 }
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 let db = load() || buildDB();
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 
 /* ====== УТИЛЫ ====== */
 const dateEl=document.getElementById('date');
 function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
 function dateKey(){return dateEl.value || todayISO();}
-function getDay(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
-function ensureSlot(hid,pid){const day=getDay(); if(!day[hid]) day[hid]={}; if(!Array.isArray(day[hid][pid])) day[hid][pid]=[]; return day[hid][pid];}
-function waiterById(id){return db.waiters.find(w=>w.id===id)}
-function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
+function hallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
+function getDayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
+function ensureSlot(hid,pid){const a=getDayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
 function notesForDay(){const k=dateKey(); if(!db.notes[k]) db.notes[k]={}; return db.notes[k];}
 function getNotes(wid){const m=notesForDay(); return m[wid]||(m[wid]=[])}
 function addNote(wid,t){const a=getNotes(wid); if(!a.includes(t)) a.push(t); save()}
 function delNote(wid,i){const a=getNotes(wid); a.splice(i,1); save()}
+function waiterById(id){return db.waiters.find(w=>w.id===id)}
+function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
+function banquetsForDay(){const k=dateKey(); if(!db.banquets[k]) db.banquets[k]=[]; return db.banquets[k];}
+function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
 
-/* ====== ШАПКА: офики ====== */
-const chipTpl=document.getElementById('chipTpl');
+/* ====== ШАПКА: банкеты + официанты ====== */
 const waiterRow=document.getElementById('waiterRow');
-let selected=null;
+const chipTpl=document.getElementById('chipTpl');
+const banquetBar=document.getElementById('banquetBar');
+let selected=null; // {k:'w'|'b', id}
 
 function renderWaiters(){
   waiterRow.innerHTML='';
@@ -160,35 +195,66 @@ function renderWaiters(){
     chip.querySelector('.note-dot').textContent=getNotes(w.id).length?'•':'';
     const {bg,fg}=colorForWaiter(w.id);
     chip.style.background=bg; chip.style.color=fg; chip.style.borderColor=bg;
-    if(selected && selected===w.id) chip.classList.add('active');
 
+    if(selected && selected.k==='w' && selected.id===w.id) chip.classList.add('active');
     chip.addEventListener('click',e=>{
       if(e.target.closest('.edit')||e.target.closest('.del')) return;
-      selected = (selected===w.id)? null : w.id;
-      renderWaiters();
+      selected=(selected && selected.k==='w' && selected.id===w.id)?null:{k:'w',id:w.id};
+      renderWaiters(); renderBanquetBar();
     },{passive:true});
 
     chip.querySelector('.edit').addEventListener('click',e=>{
-      e.stopPropagation();
-      openCommentsModal(w.id, w.name);
+      e.stopPropagation(); openCommentsModal(w.id, w.name);
     });
     chip.querySelector('.del').addEventListener('click',e=>{
       e.stopPropagation();
-      if(confirm(`Удалить «${w.name}»?`)){
-        // убрать из всех зон
-        for(const day in db.assignments){
-          const halls=db.assignments[day];
-          for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid] = (halls[hid][pid]||[]).filter(x=>x!==w.id); } }
-        }
-        db.waiters = db.waiters.filter(x=>x.id!==w.id);
-        if(db.notes) for(const d in db.notes){ delete (db.notes[d]||{})[w.id]; }
-        if(selected===w.id) selected=null;
-        save(); renderWaiters(); renderColumns();
+      if(!confirm(`Удалить «${w.name}»?`)) return;
+      // убрать из всех зон всех дней
+      for(const day in db.assignments){
+        const halls=db.assignments[day];
+        for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid]=(halls[hid][pid]||[]).filter(x=>!(x.k==='w'&&x.id===w.id)); } }
       }
+      // заметки
+      for(const day in db.notes){ if(db.notes[day]) delete db.notes[day][w.id]; }
+      db.waiters=db.waiters.filter(x=>x.id!==w.id);
+      if(selected && selected.k==='w' && selected.id===w.id) selected=null;
+      save(); renderWaiters(); renderColumns();
     });
 
     waiterRow.appendChild(chip);
   });
+}
+
+function renderBanquetBar(){
+  banquetBar.innerHTML='';
+  // + Банкет
+  const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
+  addBtn.onclick=()=>openBanquetModal();
+  banquetBar.appendChild(addBtn);
+
+  // Список банкетов дня
+  banquetsForDay().forEach(b=>{
+    const meta=BANQUET_TYPES[b.type]||BANQUET_TYPES['Другой'];
+    const chip=document.createElement('div'); chip.className='b-chip'; if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
+    const title=(b.type==='Другой' && b.other)? `Другое: ${b.other}` : meta;
+    chip.textContent = `${title} · ${b.people}`;
+    const actions=document.createElement('span'); actions.className='b-actions';
+    const edit=document.createElement('button'); edit.className='icon-btn'; edit.textContent='✏️'; edit.title='Редактировать';
+    const del=document.createElement('button'); del.className='icon-btn'; del.textContent='🗑'; del.title='Удалить';
+    edit.onclick=(e)=>{e.stopPropagation(); openBanquetModal(b);};
+    del.onclick=(e)=>{e.stopPropagation(); deleteBanquet(b.id);};
+    chip.appendChild(actions); actions.appendChild(edit); actions.appendChild(del);
+
+    chip.addEventListener('click',()=>{ selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id}; renderBanquetBar(); renderWaiters(); },{passive:true});
+    banquetBar.appendChild(chip);
+  });
+}
+function deleteBanquet(id){
+  const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
+  // убрать из всех позиций текущего дня
+  const ass=getDayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
+  if(selected && selected.k==='b' && selected.id===id) selected=null;
+  save(); renderBanquetBar(); renderColumns();
 }
 
 /* ====== КОЛОНКИ ====== */
@@ -197,92 +263,116 @@ const col1=document.getElementById('col1'), col2=document.getElementById('col2')
 
 function renderColumns(){
   col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
-  const order=['Основной зал','Малый (банкетный) зал','ВИП-комнаты','Веранда','Лофт','Винная комната'];
-  const byName=Object.fromEntries(db.halls.map(h=>[h.name,h]));
+  const map=hallsByName();
 
-  function mount(h,into){
-    const sec=hallTpl.content.firstElementChild.cloneNode(true);
-    sec.querySelector('.hall-title').textContent=h.name;
-    const grid=sec.querySelector('.pos-grid');
+  // Колонка 1
+  ['Основной зал','Малый (банкетный) зал'].forEach(name=> mountHall(map[name], col1));
+  // Колонка 2 (ВИП + Лофт)
+  ['ВИП-комнаты','Лофт'].forEach(name=> mountHall(map[name], col2));
+  // Колонка 3 (Веранда + Винная)
+  ['Веранда','Винная комната'].forEach(name=> mountHall(map[name], col3));
+}
 
-    h.positions.forEach(p=>{
-      const card=posCardTpl.content.firstElementChild.cloneNode(true);
-      card.querySelector('.pos-title').textContent=p.name;
-      const counter=card.querySelector('.counter');
-      const slot=card.querySelector('.slot');
-      const pick=card.querySelector('.pick');
-      const addBtn=card.querySelector('.addBtn');
+function mountHall(h,into){
+  if(!h) return;
+  const sec=hallTpl.content.firstElementChild.cloneNode(true);
+  sec.querySelector('.hall-title').textContent=h.name;
+  const grid=sec.querySelector('.pos-grid');
 
-      // заполнить дропдаун всеми официантами
-      pick.innerHTML='<option value="">— выбрать официанта —</option>';
-      db.waiters.forEach(w=>{
-        const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; pick.appendChild(opt);
-      });
+  h.positions.forEach(p=>{
+    const card=posCardTpl.content.firstElementChild.cloneNode(true);
+    card.querySelector('.pos-title').textContent=p.name;
+    const counter=card.querySelector('.counter');
+    const slot=card.querySelector('.slot');
+    const pick=card.querySelector('.pick');
+    const addBtn=card.querySelector('.addBtn');
 
-      const draw=()=>{
-        const arr=ensureSlot(h.id,p.id);
-        slot.innerHTML='';
-        arr.forEach(wid=>{
-          const w=waiterById(wid); if(!w) return;
-          const {bg,fg}=colorForWaiter(wid);
-          const el=document.createElement('div'); el.className='assign'; el.style.background=bg; el.style.color=fg; el.style.borderColor=bg;
-          const nm=document.createElement('div'); nm.className='w-name'; nm.textContent=w.name;
-          const noteTxt=getNotes(wid); if(noteTxt.length){ const nt=document.createElement('div'); nt.className='w-note'; nt.textContent=noteTxt.join(', '); el.appendChild(nt); }
-          const x=document.createElement('button'); x.className='x'; x.title='Убрать'; x.textContent='×';
-          x.onclick=(e)=>{ e.stopPropagation(); removeFrom(h.id,p.id,wid); draw(); };
-          el.appendChild(nm); el.appendChild(x);
+    // заполнить дропдаун всеми официантами
+    fillPick(pick);
+
+    const draw=()=>{
+      const arr=ensureSlot(h.id,p.id);
+      slot.innerHTML='';
+      arr.forEach(ent=>{
+        if(ent.k==='w'){
+          const w=waiterById(ent.id); if(!w) return;
+          const {bg,fg}=colorForWaiter(ent.id);
+          const el=renderAssign(w.name, getNotes(ent.id), bg, fg, ()=>{ removeEnt(h.id,p.id,ent); draw(); });
           slot.appendChild(el);
-        });
-        counter.textContent=String(arr.length); // только счётчик, без лимита
-      };
-
-      function addTo(hid,pid,wid){
-        if(!wid) return;
-        const arr=ensureSlot(hid,pid);
-        if(arr.includes(wid)) return;
-        if(arr.length>=3){ alert('Максимум 3 имени в этой зоне.'); return; } // визуальный лимит 3
-        arr.push(wid); save(); draw();
-      }
-      function removeFrom(hid,pid,wid){
-        const arr=ensureSlot(hid,pid); const i=arr.indexOf(wid); if(i>-1) arr.splice(i,1); save();
-      }
-
-      // Клик по карточке — добавление выбранного в шапке
-      card.addEventListener('click',e=>{
-        if(e.target.closest('.adder')||e.target.closest('.assign')) return;
-        if(selected) addTo(h.id,p.id,selected);
+        }else{
+          const b=banquetById(ent.id); if(!b) return;
+          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
+          const label=`${title} · ${b.people}`;
+          const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
+          slot.appendChild(el);
+        }
       });
-      // Кнопка "Добавить" из дропдауна
-      addBtn.addEventListener('click',e=>{
-        e.stopPropagation();
-        const wid=pick.value; addTo(h.id,p.id,wid); pick.value='';
-      });
+      counter.textContent=String(arr.length); // только количество
+    };
 
-      draw();
-      grid.appendChild(card);
+    function assign(hid,pid,ent){
+      const arr=ensureSlot(hid,pid);
+      if(arr.some(x=>x.k===ent.k && x.id===ent.id)) return; // не дублируем
+      arr.push(ent); save(); draw();
+    }
+    function removeEnt(hid,pid,ent){
+      const arr=ensureSlot(hid,pid); const i=arr.findIndex(x=>x.k===ent.k && x.id===ent.id);
+      if(i>-1) arr.splice(i,1); save();
+    }
+
+    // Добавление выбранного в шапке (официант или банкет)
+    card.addEventListener('click',e=>{
+      if(e.target.closest('.adder')||e.target.closest('.assign')) return;
+      if(!selected) return;
+      assign(h.id,p.id, selected);
     });
 
-    into.appendChild(sec);
-  }
+    // Кнопка «Добавить» из дропдауна
+    addBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const wid=pick.value;
+      if(!wid) return;
+      assign(h.id,p.id,{k:'w',id:wid});
+      pick.value='';
+    });
 
-  order.forEach((n,i)=>{
-    const h=byName[n]; if(!h) return;
-    if(i<2) mount(h,col1);
-    else if(i===2) mount(h,col2);
-    else mount(h,col3);
+    draw();
+    grid.appendChild(card);
   });
+
+  into.appendChild(sec);
+}
+
+function fillPick(selectEl){
+  selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
+  db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
+}
+
+function renderAssign(name, notesArr, bg, fg, onRemove){
+  const el=document.createElement('div'); el.className='assign';
+  if(bg){ el.style.background=bg; el.style.borderColor=bg; }
+  if(fg){ el.style.color=fg; }
+  const top=document.createElement('div'); top.className='top';
+  const nm=document.createElement('div'); nm.className='w-name'; nm.textContent=name;
+  const x=document.createElement('button'); x.className='x'; x.title='Убрать'; x.textContent='×';
+  x.onclick=(e)=>{ e.stopPropagation(); onRemove(); };
+  top.appendChild(nm); top.appendChild(x);
+  const note=document.createElement('div'); note.className='w-note';
+  note.textContent = (notesArr && notesArr.length) ? notesArr.join(', ') : ''; // ВСЕГДА есть строка под именем
+  el.appendChild(top); el.appendChild(note);
+  return el;
 }
 
 /* ====== Комментарии к официанту ====== */
 function openCommentsModal(wid, wname){
   const presets=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете'];
-  const wrap=document.createElement('div'); wrap.style.position='fixed'; wrap.style.inset='0'; wrap.style.background='rgba(0,0,0,.25)';
-  wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.justifyContent='center'; wrap.style.padding='10px'; wrap.innerHTML =
-    '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px;min-width:min(96vw,420px)">' +
-      '<div style="font-weight:900;margin-bottom:6px">Комментарии — '+wname+'</div>'+
-      '<div id="presetBox" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>'+
-      '<div id="tagList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>'+
-      '<div style="display:flex;gap:6px"><input id="cInp" placeholder="например: до 18:00" style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px"/><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>'+
+  const wrap=document.createElement('div'); wrap.className='modal';
+  wrap.innerHTML = '<div class="dialog">'+
+      '<div style="font-weight:900">Комментарии — '+wname+'</div>'+
+      '<div id="presetBox" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
+      '<div id="tagList" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
+      '<div class="row"><label>Новый</label><input id="cInp" placeholder="например: до 18:00"/></div>'+
+      '<div class="row" style="justify-content:flex-end"><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>'+
     '</div>';
   document.body.appendChild(wrap);
 
@@ -298,7 +388,8 @@ function openCommentsModal(wid, wname){
     });
   }
   presets.forEach(p=>{
-    const b=document.createElement('button'); b.textContent=p; b.className='btn-acc'; b.style.cssText='border:1px dashed #cbd5e1;border-radius:999px;padding:4px 8px;background:#fff;font-size:11px';
+    const b=document.createElement('button'); b.textContent=p; b.className='btn-acc';
+    b.style.cssText='border:1px dashed #cbd5e1;border-radius:999px;padding:4px 8px;background:#fff;font-size:11px';
     b.onclick=()=>{ const cur=getNotes(wid); const i=cur.indexOf(p); if(i===-1) addNote(wid,p); else delNote(wid,i); redraw(); renderColumns(); renderWaiters(); };
     box.appendChild(b);
   });
@@ -308,12 +399,55 @@ function openCommentsModal(wid, wname){
   redraw();
 }
 
+/* ====== Банкетная модалка ====== */
+function openBanquetModal(existing){
+  const isEdit=!!existing;
+  const wrap=document.createElement('div'); wrap.className='modal';
+  wrap.innerHTML = '<div class="dialog">'+
+    `<div style="font-weight:900">${isEdit?'Изменить банкет':'Новый банкет'}</div>`+
+    '<div class="row"><label>Кол-во персон</label><input id="bnPeople" type="number" min="1" inputmode="numeric" placeholder="25"/></div>'+
+    '<div class="row"><label>Вид</label><select id="bnType"><option>ДР</option><option>Свадьба</option><option>Корпоратив</option><option>Конференция</option><option>День памяти</option><option>Другой</option></select></div>'+
+    '<div class="row" id="bnOtherRow" style="display:none"><label>Другой</label><input id="bnOther"/></div>'+
+    '<div class="row"><label>Комментарий</label><textarea id="bnNote" rows="3" placeholder="Пожелания, тайминг..."></textarea></div>'+
+    `<div class="row" style="justify-content:flex-end"><button id="bnSave" class="btn-acc">${isEdit?'Сохранить':'Добавить'}</button><button id="bnClose">Закрыть</button></div>`+
+  '</div>';
+  document.body.appendChild(wrap);
+  const people=wrap.querySelector('#bnPeople'), type=wrap.querySelector('#bnType'), otherRow=wrap.querySelector('#bnOtherRow'), other=wrap.querySelector('#bnOther'), note=wrap.querySelector('#bnNote');
+  type.onchange=()=>{ otherRow.style.display=(type.value==='Другой')?'flex':'none'; };
+  if(isEdit){ people.value=existing.people; type.value=existing.type; note.value=existing.note||''; if(existing.type==='Другой'){ otherRow.style.display='flex'; if(other) other.value=existing.other||''; } }
+  wrap.querySelector('#bnSave').onclick=()=>{
+    const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите число персон.');
+    if(isEdit){ existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim(); }
+    else { banquetsForDay().push({id:UUID(), people:n, type:type.value, other:(other&&other.value||'').trim(), note:(note.value||'').trim()}); }
+    save(); renderBanquetBar(); renderColumns(); wrap.remove();
+  };
+  wrap.querySelector('#bnClose').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+}
+
 /* ====== Верхние кнопки ====== */
 document.getElementById('addWaiter').onclick=()=>{
-  const name=prompt('Имя официанта'); if(!name) return;
-  if(db.waiters.some(w=>w.name.toLowerCase()===name.trim().toLowerCase())) return alert('Такое имя уже есть.');
-  db.waiters.push({id:UUID(),name:name.trim()}); save(); renderWaiters();
+  // Надёжная модалка вместо window.prompt — работает на телефонах
+  const wrap=document.createElement('div'); wrap.className='modal';
+  wrap.innerHTML='<div class="dialog">'+
+    '<div style="font-weight:900">Новый официант</div>'+
+    '<div class="row"><label>Имя</label><input id="wName" placeholder="например: Павел"/></div>'+
+    '<div class="row" style="justify-content:flex-end"><button id="wSave" class="btn-acc">Добавить</button><button id="wClose">Отмена</button></div>'+
+  '</div>';
+  document.body.appendChild(wrap);
+  const input=wrap.querySelector('#wName');
+  wrap.querySelector('#wSave').onclick=()=>{
+    const name=(input.value||'').trim(); if(!name) return;
+    if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже есть.');
+    db.waiters.push({id:UUID(), name}); save(); renderWaiters(); // обновляем дропдауны во всех картах
+    document.querySelectorAll('.pick').forEach(fillPick);
+    wrap.remove();
+  };
+  wrap.querySelector('#wClose').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+  setTimeout(()=>input.focus(),0);
 };
+
 document.getElementById('copy').onclick=async()=>{
   const txt=exportText(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
 };
@@ -333,20 +467,26 @@ document.getElementById('date').onchange=()=>{ renderColumns(); renderWaiters();
 /* ====== Экспорт ====== */
 function exportText(){
   const d=dateKey(); const lines=['Распределение '+d];
-  const day=getDay();
+  const ass=getDayAss();
   db.halls.forEach(h=>{
     lines.push('\n'+h.name+':');
     h.positions.forEach(p=>{
-      const arr=(day[h.id]&&day[h.id][p.id])||[];
-      const names=arr.map(id=>waiterById(id)?.name||'—').join(' | ') || '—';
-      lines.push('• '+p.name+': '+names+'  ('+arr.length+')');
+      const arr=(ass[h.id]&&ass[h.id][p.id])||[];
+      const people=arr.map(e=>{
+        if(e.k==='w'){ const w=waiterById(e.id); const cm=getNotes(e.id); return w?(w.name + (cm.length? ' ('+cm.join(', ')+')':'')):'—'; }
+        const b=banquetById(e.id); if(!b) return 'Банкет';
+        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
+        return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
+      }).join(' | ') || '—';
+      lines.push('• '+p.name+': '+people+'  ('+arr.length+')');
     });
   });
+  const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> ( (b.type==='Другой'&&b.other?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет')) + ' · '+b.people)).join('; ')); }
   return lines.join('\n');
 }
 
 /* ====== Старт ====== */
-function renderAll(){ renderWaiters(); renderColumns(); }
+function renderAll(){ renderBanquetBar(); renderWaiters(); renderColumns(); }
 dateEl.value = todayISO();
 renderAll();
 </script>
