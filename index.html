@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Распределение — компакт+</title>
+<title>Распределение — компакт+ (сводки)</title>
 <style>
   :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -26,7 +26,7 @@
   .b-actions{display:inline-flex;gap:4px}
   .icon-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:2px 5px;font-size:11px}
 
-  /* Панель официантов (в 2 раза меньше) */
+  /* Панель официантов (мелкая) */
   .waiters{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:4px 6px;overflow-x:auto;padding:2px 0}
   .chip{border:1px solid #c7d2fe;border-radius:999px;padding:4px 8px;background:#eef2ff;color:#0b1e4a;display:inline-flex;gap:6px;align-items:center}
   .chip .name{font-weight:800;font-size:12px}
@@ -38,9 +38,12 @@
   /* 3 колонки: 1) Основной+Малый, 2) ВИП+Лофт, 3) Веранда+Винная */
   .columns{display:grid;gap:6px;padding:6px;grid-template-columns:repeat(3,1fr)}
   details.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px}
-  summary{list-style:none;display:flex;gap:6px;align-items:center;cursor:pointer}
+  summary{list-style:none;display:flex;gap:6px;align-items:flex-start;cursor:pointer;flex-wrap:wrap}
   summary::-webkit-details-marker{display:none}
   .hall-title{font-weight:900;font-size:12px}
+  .hall-summary{font-size:11px;color:var(--muted)}
+  .panel[open] .hall-summary{display:none} /* сводка видна только в свёрнутом виде */
+
   .pos-grid{display:grid;gap:6px;margin-top:6px}
   .pos-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
   .pos-head{display:flex;gap:6px;align-items:center}
@@ -49,7 +52,7 @@
 
   .slot{display:flex;flex-wrap:wrap;gap:4px;border:1px dashed #e2e8f0;border-radius:8px;padding:6px;min-height:32px}
 
-  /* Элемент в зоне — без кружка, вертикальная компоновка (имя + комментарий) */
+  /* Элемент в зоне — имя + комментарий строкой ниже */
   .assign{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:#fafafa}
   .assign .top{display:flex;gap:6px;align-items:center}
   .assign .w-name{font-weight:800;font-size:12px}
@@ -69,7 +72,6 @@
   .row>input,.row>select,.row>textarea{flex:1;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12px}
   .row>textarea{min-height:70px}
 
-  /* Очень компактный режим */
   @media (max-width:430px){
     html,body{font-size:11px}
     input[type="date"],button{min-height:26px;font-size:11px}
@@ -116,7 +118,10 @@
 
   <template id="hallTpl">
     <details class="panel" open>
-      <summary><span class="hall-title"></span></summary>
+      <summary>
+        <span class="hall-title"></span>
+        <span class="hall-summary"></span>
+      </summary>
       <div class="pos-grid"></div>
     </details>
   </template>
@@ -140,7 +145,7 @@
 
 /* ====== БАЗА ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v2'; // новая схема (поддержка банкетов)
+const STORAGE_KEY='rota-compact-v3'; // новая версия (сводки в summary)
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 const CANON_HALLS=[
   {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
@@ -180,6 +185,7 @@ function waiterById(id){return db.waiters.find(w=>w.id===id)}
 function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
 function banquetsForDay(){const k=dateKey(); if(!db.banquets[k]) db.banquets[k]=[]; return db.banquets[k];}
 function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
+function banquetTitle(b){ if(!b) return 'Банкет'; const t=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет'); return `${t} · ${b.people}`; }
 
 /* ====== ШАПКА: банкеты + официанты ====== */
 const waiterRow=document.getElementById('waiterRow');
@@ -209,12 +215,10 @@ function renderWaiters(){
     chip.querySelector('.del').addEventListener('click',e=>{
       e.stopPropagation();
       if(!confirm(`Удалить «${w.name}»?`)) return;
-      // убрать из всех зон всех дней
       for(const day in db.assignments){
         const halls=db.assignments[day];
         for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid]=(halls[hid][pid]||[]).filter(x=>!(x.k==='w'&&x.id===w.id)); } }
       }
-      // заметки
       for(const day in db.notes){ if(db.notes[day]) delete db.notes[day][w.id]; }
       db.waiters=db.waiters.filter(x=>x.id!==w.id);
       if(selected && selected.k==='w' && selected.id===w.id) selected=null;
@@ -227,31 +231,25 @@ function renderWaiters(){
 
 function renderBanquetBar(){
   banquetBar.innerHTML='';
-  // + Банкет
   const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
   addBtn.onclick=()=>openBanquetModal();
   banquetBar.appendChild(addBtn);
 
-  // Список банкетов дня
   banquetsForDay().forEach(b=>{
-    const meta=BANQUET_TYPES[b.type]||BANQUET_TYPES['Другой'];
     const chip=document.createElement('div'); chip.className='b-chip'; if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
-    const title=(b.type==='Другой' && b.other)? `Другое: ${b.other}` : meta;
-    chip.textContent = `${title} · ${b.people}`;
+    chip.textContent = banquetTitle(b) + (b.note?` (${b.note})`:``);
     const actions=document.createElement('span'); actions.className='b-actions';
     const edit=document.createElement('button'); edit.className='icon-btn'; edit.textContent='✏️'; edit.title='Редактировать';
     const del=document.createElement('button'); del.className='icon-btn'; del.textContent='🗑'; del.title='Удалить';
     edit.onclick=(e)=>{e.stopPropagation(); openBanquetModal(b);};
     del.onclick=(e)=>{e.stopPropagation(); deleteBanquet(b.id);};
     chip.appendChild(actions); actions.appendChild(edit); actions.appendChild(del);
-
     chip.addEventListener('click',()=>{ selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id}; renderBanquetBar(); renderWaiters(); },{passive:true});
     banquetBar.appendChild(chip);
   });
 }
 function deleteBanquet(id){
   const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
-  // убрать из всех позиций текущего дня
   const ass=getDayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
   if(selected && selected.k==='b' && selected.id===id) selected=null;
   save(); renderBanquetBar(); renderColumns();
@@ -264,22 +262,48 @@ const col1=document.getElementById('col1'), col2=document.getElementById('col2')
 function renderColumns(){
   col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
   const map=hallsByName();
-
-  // Колонка 1
   ['Основной зал','Малый (банкетный) зал'].forEach(name=> mountHall(map[name], col1));
-  // Колонка 2 (ВИП + Лофт)
-  ['ВИП-комнаты','Лофт'].forEach(name=> mountHall(map[name], col2));
-  // Колонка 3 (Веранда + Винная)
+  ['ВИП-комнаты','Лофт'].forEach(name=> mountHall(map[name], col2));     /* ВИП + Лофт */
   ['Веранда','Винная комната'].forEach(name=> mountHall(map[name], col3));
 }
 
 function mountHall(h,into){
   if(!h) return;
   const sec=hallTpl.content.firstElementChild.cloneNode(true);
-  sec.querySelector('.hall-title').textContent=h.name;
+  const titleEl=sec.querySelector('.hall-title');
+  const summaryEl=sec.querySelector('.hall-summary');
+  titleEl.textContent=h.name;
   const grid=sec.querySelector('.pos-grid');
 
-  h.positions.forEach(p=>{
+  const updateSummary=()=>{
+    // Собираем только непустые позиции: "позиция – Имя(комм), Имя(комм); Банкет(комм)"
+    const a=getDayAss(); const hall=a[h.id]||{};
+    const parts=[];
+    (h.positions||[]).forEach(p=>{
+      const arr=(hall[p.id]||[]);
+      if(!arr.length) return;
+      const items=arr.map(ent=>{
+        if(ent.k==='w'){
+          const w=waiterById(ent.id);
+          if(!w) return '—';
+          const notes=getNotes(ent.id);
+          return w.name + (notes.length? ' ('+notes.join(', ')+')':'' );
+        }else{
+          const b=banquetById(ent.id);
+          if(!b) return 'Банкет';
+          return banquetTitle(b) + (b.note?` (${b.note})`:``);
+        }
+      }).join(', ');
+      parts.push(`${p.name} – ${items}`);
+    });
+    summaryEl.textContent = parts.join(' · ');
+    // Показать сводку только когда панель закрыта — управляет CSS
+  };
+
+  // по клику сворачивания/разворачивания обновляем сводку
+  sec.addEventListener('toggle', updateSummary);
+
+  (h.positions||[]).forEach(p=>{
     const card=posCardTpl.content.firstElementChild.cloneNode(true);
     card.querySelector('.pos-title').textContent=p.name;
     const counter=card.querySelector('.counter');
@@ -287,8 +311,7 @@ function mountHall(h,into){
     const pick=card.querySelector('.pick');
     const addBtn=card.querySelector('.addBtn');
 
-    // заполнить дропдаун всеми официантами
-    fillPick(pick);
+    fillPick(pick); // дропдаун выбора официанта (и для ВИП тоже)
 
     const draw=()=>{
       const arr=ensureSlot(h.id,p.id);
@@ -297,22 +320,21 @@ function mountHall(h,into){
         if(ent.k==='w'){
           const w=waiterById(ent.id); if(!w) return;
           const {bg,fg}=colorForWaiter(ent.id);
-          const el=renderAssign(w.name, getNotes(ent.id), bg, fg, ()=>{ removeEnt(h.id,p.id,ent); draw(); });
+          const el=renderAssign(w.name, getNotes(ent.id), bg, fg, ()=>{ removeEnt(h.id,p.id,ent); draw(); updateSummary(); });
           slot.appendChild(el);
         }else{
           const b=banquetById(ent.id); if(!b) return;
-          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
-          const label=`${title} · ${b.people}`;
-          const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
+          const el=renderAssign(banquetTitle(b), b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); updateSummary(); });
           slot.appendChild(el);
         }
       });
-      counter.textContent=String(arr.length); // только количество
+      counter.textContent=String(arr.length);
+      updateSummary();
     };
 
     function assign(hid,pid,ent){
       const arr=ensureSlot(hid,pid);
-      if(arr.some(x=>x.k===ent.k && x.id===ent.id)) return; // не дублируем
+      if(arr.some(x=>x.k===ent.k && x.id===ent.id)) return;
       arr.push(ent); save(); draw();
     }
     function removeEnt(hid,pid,ent){
@@ -320,7 +342,7 @@ function mountHall(h,into){
       if(i>-1) arr.splice(i,1); save();
     }
 
-    // Добавление выбранного в шапке (официант или банкет)
+    // Добавление выбранного (официант/банкет)
     card.addEventListener('click',e=>{
       if(e.target.closest('.adder')||e.target.closest('.assign')) return;
       if(!selected) return;
@@ -340,6 +362,9 @@ function mountHall(h,into){
     grid.appendChild(card);
   });
 
+  // начальная сводка (на случай если панель сразу свернут)
+  updateSummary();
+
   into.appendChild(sec);
 }
 
@@ -358,7 +383,7 @@ function renderAssign(name, notesArr, bg, fg, onRemove){
   x.onclick=(e)=>{ e.stopPropagation(); onRemove(); };
   top.appendChild(nm); top.appendChild(x);
   const note=document.createElement('div'); note.className='w-note';
-  note.textContent = (notesArr && notesArr.length) ? notesArr.join(', ') : ''; // ВСЕГДА есть строка под именем
+  note.textContent = (notesArr && notesArr.length) ? notesArr.join(', ') : '';
   el.appendChild(top); el.appendChild(note);
   return el;
 }
@@ -427,7 +452,6 @@ function openBanquetModal(existing){
 
 /* ====== Верхние кнопки ====== */
 document.getElementById('addWaiter').onclick=()=>{
-  // Надёжная модалка вместо window.prompt — работает на телефонах
   const wrap=document.createElement('div'); wrap.className='modal';
   wrap.innerHTML='<div class="dialog">'+
     '<div style="font-weight:900">Новый официант</div>'+
@@ -439,8 +463,8 @@ document.getElementById('addWaiter').onclick=()=>{
   wrap.querySelector('#wSave').onclick=()=>{
     const name=(input.value||'').trim(); if(!name) return;
     if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже есть.');
-    db.waiters.push({id:UUID(), name}); save(); renderWaiters(); // обновляем дропдауны во всех картах
-    document.querySelectorAll('.pick').forEach(fillPick);
+    db.waiters.push({id:UUID(), name}); save(); renderWaiters();
+    document.querySelectorAll('.pick').forEach(fillPick); // обновить дропдауны
     wrap.remove();
   };
   wrap.querySelector('#wClose').onclick=()=>wrap.remove();
@@ -477,8 +501,8 @@ function exportText(){
         const b=banquetById(e.id); if(!b) return 'Банкет';
         const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
         return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
-      }).join(' | ') || '—';
-      lines.push('• '+p.name+': '+people+'  ('+arr.length+')');
+      }).join(', ') || '';
+      if(people) lines.push('• '+p.name+': '+people+'  ('+arr.length+')');
     });
   });
   const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> ( (b.type==='Другой'&&b.other?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет')) + ' · '+b.people)).join('; ')); }
