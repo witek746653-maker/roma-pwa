@@ -2,94 +2,58 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="format-detection" content="telephone=no" />
-<title>Распределение — v20 auto-update</title>
-
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#2563eb">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Распределение — компакт</title>
 <style>
-  :root{ --bg:#fff; --text:#0f172a; --muted:#6b7280; --accent:#2563eb; --border:#e5e7eb; --panel:#f8fafc; --danger:#ef4444; }
+  :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{height:100%; width:100%}
-  body{margin:0; font:13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Noto Sans,sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden}
-
-  .header{ position:sticky; top:0; z-index:10; display:grid; grid-template-columns:1fr; gap:8px;
-    padding:10px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.98); backdrop-filter:saturate(1.05) blur(2px) }
-  @media (min-width:900px){ .header{ grid-template-columns:auto 1fr auto; align-items:start } }
-
-  .left{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-  label{font-size:11px; color:var(--muted)}
-  .field{display:flex; flex-direction:column; gap:4px}
-  input[type="date"]{ border:1px solid var(--border); border-radius:10px; padding:8px 10px; min-height:36px; background:#fff; color:#000; font-size:14px }
-  button{ appearance:none; border:1px solid var(--border); background:#fff; color:#0f172a; padding:8px 10px; min-height:36px; border-radius:10px; font-size:13px; cursor:pointer }
-  button:active{transform:scale(.98)}
-  .btn-acc{border-color:rgba(37,99,235,.35)}
-  .btn-danger{border-color:rgba(239,68,68,.45); color:#b91c1c}
-  .btn-link{border:none; background:transparent; color:#2563eb; text-decoration:underline; padding:0 6px}
-
-  .center{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center}
-  .b-chip{border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fff; display:inline-flex; gap:6px; align-items:center; font-weight:700; font-size:13px; cursor:pointer; max-width:100%}
-  .b-chip.active{outline:2px solid rgba(37,99,235,.25)}
-  .b-dot{width:12px;height:12px;border-radius:999px;border:1px solid #0002; flex:0 0 auto}
-  .b-actions{display:inline-flex; gap:4px}
-  .icon-btn{border:1px solid var(--border); background:#fff; border-radius:7px; padding:4px 6px; font-size:12px}
-  .b-add{margin-left:4px}
-
-  .waiters{ display:grid; grid-auto-flow:column; grid-template-rows:repeat(2,auto); gap:6px 8px; overflow-x:auto; padding-bottom:2px; justify-items:start; -webkit-overflow-scrolling:touch; max-width:100% }
-  .chip{border:1px solid #c7d2fe; border-radius:999px; padding:6px 10px; background:#eef2ff; color:#0b1e4a; display:inline-flex; align-items:center; gap:6px; max-width:100%}
-  .chip .name{font-weight:800; font-size:13px}
-  .chip .note-dot{font-size:12px; color:#374151}
-  .chip .edit{border:1px solid var(--border); border-radius:8px; padding:2px 6px; background:#fff; font-size:12px}
-  .chip .del{border:none; background:transparent; color:#991b1b; font-weight:900; font-size:16px; line-height:1; padding:0 4px; cursor:pointer}
-  .chip.active{outline:2px solid rgba(37,99,235,.25)}
-
-  .columns{display:grid; gap:10px; padding:10px; max-width:100%}
-  @media (min-width:1000px){ .columns{ grid-template-columns:repeat(3,1fr) } }
-  @media (max-width:999px){ .columns{ grid-template-columns:1fr } }
-
-  details.panel{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px; overflow:hidden}
-  summary{list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:12px/1.25 system-ui,-apple-system,Segoe UI,Roboto}
+  /* Шапка */
+  .header{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:1fr;gap:6px;padding:6px;border-bottom:1px solid var(--border);background:#fff}
+  .left{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  label{font-size:10px;color:var(--muted)}
+  .field{display:flex;gap:2px;flex-direction:column}
+  input[type="date"],button{border:1px solid var(--border);background:#fff;border-radius:8px;min-height:28px;padding:4px 8px;font-size:12px}
+  button{cursor:pointer}
+  .btn-acc{border-color:#c7d2fe}
+  /* Панель официантов (в 2 раза меньше) */
+  .waiters{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:4px 6px;overflow-x:auto;padding:2px 0}
+  .chip{border:1px solid #c7d2fe;border-radius:999px;padding:4px 8px;background:#eef2ff;color:#0b1e4a;display:inline-flex;gap:6px;align-items:center}
+  .chip .name{font-weight:800;font-size:12px}
+  .chip .note-dot{font-size:10px;color:#475569}
+  .chip .edit{border:1px solid var(--border);border-radius:6px;padding:1px 5px;background:#fff;font-size:11px}
+  .chip .del{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;padding:0 4px}
+  .chip.active{outline:2px solid rgba(99,102,241,.25)}
+  /* Сетка 3 колонки даже на телефоне */
+  .columns{display:grid;gap:6px;padding:6px;grid-template-columns:repeat(3,1fr)}
+  details.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px}
+  summary{list-style:none;display:flex;gap:6px;align-items:center;cursor:pointer}
   summary::-webkit-details-marker{display:none}
-  .hall-ico{font-size:15px}
-  .hall-title{font-weight:900; font-size:14px; margin:0}
-
-  .pos-grid{display:grid; grid-template-columns:1fr; gap:10px; margin-top:8px}
-  .pos-card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px}
-  .pos-head{display:flex; align-items:center; gap:8px}
-  .pos-ico{font-size:14px}
-  .pos-title{font-weight:800; font-size:13px}
-  .muted{color:var(--muted); font-size:12px}
-
-  .slot{ display:flex; flex-wrap:wrap; gap:8px; border:2px dashed #e2e8f0; border-radius:10px; padding:8px; min-height:44px; width:100% }
-  .slot.highlight{border-color:var(--accent)}
-  .assign{ display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fafafa; flex:1 1 calc(50% - 8px); min-width:140px; max-width:100% }
-  @media (min-width:640px){ .assign{flex:1 1 calc(33.333% - 8px)} }
-  .dot{width:12px;height:12px;border-radius:999px;border:1px solid #0002;flex:0 0 auto}
-  .assign .w-name{font-weight:800; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .assign .w-note{font-size:11px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .assign .x{margin-left:auto; border:none; background:transparent; color:#991b1b; font-weight:900; font-size:16px; line-height:1; cursor:pointer; padding:0 4px}
-  .assign .x:active{transform:scale(.9)}
-
-  .modal{position:fixed; inset:0; background:rgba(0,0,0,.28); display:flex; align-items:center; justify-content:center; padding:12px; z-index:40}
-  .dialog{background:#fff; border:1px solid var(--border); border-radius:14px; width:min(560px,96vw); padding:12px; display:flex; flex-direction:column; gap:10px}
-  .row{display:flex; gap:8px; align-items:center}
-  .row>label{min-width:120px; color:var(--muted); font-size:13px}
-  .row>input,.row>select,.row>textarea{ flex:1; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:14px }
-  .row>textarea{min-height:80px}
-  .tags{display:flex; gap:6px; flex-wrap:wrap}
-  .tag{font-size:12px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:999px; padding:2px 10px; display:inline-flex; gap:6px; align-items:center}
-  .tag .x{cursor:pointer; font-weight:800}
-  .presets{display:flex; flex-wrap:wrap; gap:6px}
-  .preset{border:1px dashed #cbd5e1; border-radius:999px; padding:5px 10px; cursor:pointer; font-size:12px}
-  .preset.on{background:#e2e8f0; border-style:solid}
-
-  .update-banner{display:none; position:fixed; bottom:12px; left:12px; right:12px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px; box-shadow:0 6px 18px rgba(0,0,0,.08); z-index:99}
-  .update-banner.show{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .hall-title{font-weight:900;font-size:12px}
+  .pos-grid{display:grid;gap:6px;margin-top:6px}
+  .pos-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+  .pos-head{display:flex;gap:6px;align-items:center}
+  .pos-title{font-weight:800;font-size:12px}
+  .counter{margin-left:auto;color:#475569;font-size:11px}
+  .slot{display:flex;flex-wrap:wrap;gap:4px;border:1px dashed #e2e8f0;border-radius:8px;padding:6px;min-height:32px}
+  /* Имя внутри зоны — без кружка, цвет как у кнопки */
+  .assign{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:3px 8px;background:#fafafa}
+  .assign .w-name{font-weight:800;font-size:12px}
+  .assign .w-note{font-size:10px;color:#64748b}
+  .assign .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
+  /* Дропдаун выбора имени в каждой зоне */
+  .adder{display:flex;gap:6px;align-items:center}
+  .adder select{border:1px solid var(--border);border-radius:8px;min-height:26px;padding:2px 6px;font-size:12px;max-width:100%}
+  .adder .addBtn{border:1px solid #c7d2fe;background:#eef2ff;border-radius:8px;min-height:26px;padding:2px 8px;font-size:12px;cursor:pointer}
+  /* Очень компактный режим, чтобы всё влезло */
+  @media (max-width:430px){
+    html,body{font-size:11px}
+    input[type="date"],button{min-height:26px;font-size:11px}
+    .chip .name,.assign .w-name{font-size:11px}
+    .columns{gap:4px}
+    .pos-card{padding:6px}
+    .slot{padding:4px}
+  }
 </style>
 </head>
 <body>
@@ -102,13 +66,9 @@
       <button id="addWaiter" class="btn-acc">Добавить официанта</button>
       <button id="share" class="btn-acc">Поделиться</button>
       <button id="copy">Копировать</button>
-      <button id="save">Сохранить</button>
-      <button id="resetDay" class="btn-danger">Очистить</button>
+      <button id="resetDay">Очистить</button>
       <button id="hardReset" title="Полный сброс">Сбросить всё</button>
-      <button id="refreshApp" class="btn-link" title="Перезагрузить и обновить приложение">Обновить приложение</button>
     </div>
-
-    <div class="center" id="banquetBar" aria-label="Банкеты"></div>
     <div class="waiters" id="waiterRow" aria-label="Официанты"></div>
   </div>
 
@@ -118,11 +78,7 @@
     <div class="col" id="col3"></div>
   </div>
 
-  <div class="update-banner" id="upd">
-    Доступна новая версия. <button id="updBtn" class="btn-acc">Обновить</button>
-  </div>
-
-  <!-- Templates -->
+  <!-- шаблоны -->
   <template id="chipTpl">
     <div class="chip" tabindex="0">
       <span class="name"></span>
@@ -134,7 +90,7 @@
 
   <template id="hallTpl">
     <details class="panel" open>
-      <summary><span class="hall-ico"></span><span class="hall-title"></span></summary>
+      <summary><span class="hall-title"></span></summary>
       <div class="pos-grid"></div>
     </details>
   </template>
@@ -142,9 +98,12 @@
   <template id="posCardTpl">
     <div class="pos-card">
       <div class="pos-head">
-        <span class="pos-ico">🪑</span>
         <div class="pos-title"></div>
-        <div class="muted counter" style="margin-left:auto"></div>
+        <div class="counter"></div>
+      </div>
+      <div class="adder">
+        <select class="pick"><option value="">— выбрать официанта —</option></select>
+        <button class="addBtn">Добавить</button>
       </div>
       <div class="slot"></div>
     </div>
@@ -152,68 +111,46 @@
 
 <script>
 'use strict';
-(function(){ try{ boot(); }catch(e){ console.error(e); alert('Ошибка инициализации. Нажми «Сбросить всё» и перезагрузи.'); } })();
-
-function boot(){
-const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8));
-const fmtRU=iso=>{const [y,m,d]=iso.split('-');return `${d}.${m}.${y}`;}
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-const STORAGE_KEY='waiters-rota-v20';
-const SLOT_LIMIT=7;
+/* ====== ДАННЫЕ ====== */
+const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
+const STORAGE_KEY='rota-compact-v1';
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
-const BANQUET_TYPES={'ДР':{label:'🎉 ДР',bg:'#FFF1D6',fg:'#7a3d00'},'Свадьба':{label:'💍 Свадьба',bg:'#FFE8F2',fg:'#7a003a'},'Корпоратив':{label:'🏢 Корпоратив',bg:'#E8F7FF',fg:'#0b3d5a'},'Конференция':{label:'📣 Конференция',bg:'#E8EEFF',fg:'#1a2a7a'},'День памяти':{label:'🕯️ День памяти',bg:'#F4F4F5',fg:'#111827'},'Другой':{label:'🏷️ Другое',bg:'#EAFBEA',fg:'#104a20'}};
-const PRESET_COMMENTS=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете'];
-const CANON_HALLS=[{name:'Основной зал',positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},{name:'Малый (банкетный) зал',positions:['']},{name:'ВИП-комнаты',positions:['Большой ВИП','Малый ВИП','Каюта','Лиенда']},{name:'Веранда',positions:['Веранда 1','Веранда 2']},{name:'Лофт',positions:['']},{name:'Винная комната',positions:['']}];
-
-function buildFreshDB(){
+const CANON_HALLS=[
+  {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
+  {name:'Малый (банкетный) зал', positions:['МБЗ']},
+  {name:'ВИП-комнаты', positions:['Большой ВИП','Малый ВИП','Каюта','Лиенда']},
+  {name:'Веранда', positions:['Веранда 1','Веранда 2']},
+  {name:'Лофт', positions:['Лофт']},
+  {name:'Винная комната', positions:['Винная комната']}
+];
+function buildDB(){
   return {
     halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
     waiters:['Игорь','Виктор','Роман','Элона','Полина','Ксения','Наталья Ч.','Наталья В.','Анастасия','Екатерина'].map(n=>({id:UUID(),name:n})),
-    assignments:{}, banquets:{}, dayNotes:{}
+    assignments:{}, notes:{}
   };
 }
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+let db = load() || buildDB();
 
-let db = load() || buildFreshDB();
-
+/* ====== УТИЛЫ ====== */
 const dateEl=document.getElementById('date');
-const waiterRow=document.getElementById('waiterRow');
-const banquetBar=document.getElementById('banquetBar');
-const col1=document.getElementById('col1'), col2=document.getElementById('col2'), col3=document.getElementById('col3');
-const chipTpl=document.getElementById('chipTpl'), hallTpl=document.getElementById('hallTpl'), posCardTpl=document.getElementById('posCardTpl');
-let selected=null;
-
 function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
 function dateKey(){return dateEl.value || todayISO();}
-function getDayAssignments(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
-function ensurePath(h,p){const a=getDayAssignments(); if(!a[h]) a[h]={}; if(!Array.isArray(a[h][p])) a[h][p]=[]; return a[h][p];}
-function waiterById(id){return db.waiters.find(w=>w.id===id);}
-function colorForWaiter(id){const i=Math.max(0,db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg};}
-function banquetsForDay(){const k=dateKey(); if(!db.banquets[k]) db.banquets[k]=[]; return db.banquets[k];}
-function banquetById(id){return banquetsForDay().find(b=>b.id===id);}
-function notesForDay(){const k=dateKey(); if(!db.dayNotes[k]) db.dayNotes[k]={}; return db.dayNotes[k];}
-function getNotes(id){const m=notesForDay(); return m[id]||(m[id]=[]);}
-function addNote(id,t){const a=getNotes(id); if(!a.includes(t)) a.push(t); save();}
-function delNote(id,i){const a=getNotes(id); a.splice(i,1); save();}
+function getDay(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
+function ensureSlot(hid,pid){const day=getDay(); if(!day[hid]) day[hid]={}; if(!Array.isArray(day[hid][pid])) day[hid][pid]=[]; return day[hid][pid];}
+function waiterById(id){return db.waiters.find(w=>w.id===id)}
+function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
+function notesForDay(){const k=dateKey(); if(!db.notes[k]) db.notes[k]={}; return db.notes[k];}
+function getNotes(wid){const m=notesForDay(); return m[wid]||(m[wid]=[])}
+function addNote(wid,t){const a=getNotes(wid); if(!a.includes(t)) a.push(t); save()}
+function delNote(wid,i){const a=getNotes(wid); a.splice(i,1); save()}
 
-function addWaiter(name){
-  const trimmed=(name||'').trim();
-  if(!trimmed){ alert('Введите имя.'); return false; }
-  if(db.waiters.some(w=>w.name.toLowerCase()===trimmed.toLowerCase())){ alert('Такое имя уже есть.'); return false; }
-  db.waiters.push({id:UUID(), name:trimmed}); save(); renderWaiters(); return true;
-}
-function removeWaiterEverywhere(wid){
-  db.waiters = db.waiters.filter(w=>w.id!==wid);
-  for(const day in db.assignments){
-    const halls=db.assignments[day];
-    for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid]=(halls[hid][pid]||[]).filter(e=>!(e.k==='w' && e.id===wid)); } }
-  }
-  for(const day in db.dayNotes){ if(db.dayNotes[day] && db.dayNotes[day][wid]) delete db.dayNotes[day][wid]; }
-  if(selected && selected.k==='w' && selected.id===wid) selected=null;
-  save(); renderWaiters(); renderColumns();
-}
+/* ====== ШАПКА: офики ====== */
+const chipTpl=document.getElementById('chipTpl');
+const waiterRow=document.getElementById('waiterRow');
+let selected=null;
 
 function renderWaiters(){
   waiterRow.innerHTML='';
@@ -221,325 +158,197 @@ function renderWaiters(){
     const chip=chipTpl.content.firstElementChild.cloneNode(true);
     chip.querySelector('.name').textContent=w.name;
     chip.querySelector('.note-dot').textContent=getNotes(w.id).length?'•':'';
-    const {bg,fg}=colorForWaiter(w.id); chip.style.background=bg; chip.style.color=fg; chip.style.borderColor=bg;
-
-    if(selected && selected.k==='w' && selected.id===w.id) chip.classList.add('active');
+    const {bg,fg}=colorForWaiter(w.id);
+    chip.style.background=bg; chip.style.color=fg; chip.style.borderColor=bg;
+    if(selected && selected===w.id) chip.classList.add('active');
 
     chip.addEventListener('click',e=>{
-      if(e.target.closest('.edit') || e.target.closest('.del')) return;
-      selected=(selected&&selected.k==='w'&&selected.id===w.id)?null:{k:'w',id:w.id};
-      renderWaiters(); renderBanquetBar();
+      if(e.target.closest('.edit')||e.target.closest('.del')) return;
+      selected = (selected===w.id)? null : w.id;
+      renderWaiters();
     },{passive:true});
 
-    chip.querySelector('.edit').addEventListener('click',e=>{ e.stopPropagation(); openCommentsModal(w.id); });
+    chip.querySelector('.edit').addEventListener('click',e=>{
+      e.stopPropagation();
+      openCommentsModal(w.id, w.name);
+    });
     chip.querySelector('.del').addEventListener('click',e=>{
       e.stopPropagation();
-      const ok=confirm(`Удалить «${w.name}» из списка?`);
-      if(ok) removeWaiterEverywhere(w.id);
+      if(confirm(`Удалить «${w.name}»?`)){
+        // убрать из всех зон
+        for(const day in db.assignments){
+          const halls=db.assignments[day];
+          for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid] = (halls[hid][pid]||[]).filter(x=>x!==w.id); } }
+        }
+        db.waiters = db.waiters.filter(x=>x.id!==w.id);
+        if(db.notes) for(const d in db.notes){ delete (db.notes[d]||{})[w.id]; }
+        if(selected===w.id) selected=null;
+        save(); renderWaiters(); renderColumns();
+      }
     });
 
     waiterRow.appendChild(chip);
   });
 }
 
-const BTYPE=t=>BANQUET_TYPES[t]||BANQUET_TYPES['Другой'];
-function renderBanquetBar(){
-  banquetBar.innerHTML='';
-  const addBtn=document.createElement('button'); addBtn.className='b-chip b-add'; addBtn.textContent='+ Банкет';
-  addBtn.addEventListener('click',()=>openBanquetModal());
-  banquetBar.appendChild(addBtn);
+/* ====== КОЛОНКИ ====== */
+const hallTpl=document.getElementById('hallTpl'), posCardTpl=document.getElementById('posCardTpl');
+const col1=document.getElementById('col1'), col2=document.getElementById('col2'), col3=document.getElementById('col3');
 
-  banquetsForDay().forEach(b=>{
-    const meta=BTYPE(b.type);
-    const btn=document.createElement('div'); btn.className='b-chip'; btn.setAttribute('draggable','true'); btn.style.background=meta.bg; btn.style.color=meta.fg; btn.style.borderColor=meta.bg;
-    const dot=document.createElement('span'); dot.className='b-dot'; dot.style.background=meta.bg;
-    const title=b.type==='Другой'&&b.other?('Другое: '+b.other):meta.label;
-    const txt=document.createElement('span'); txt.textContent=`${title} · ${b.people}`;
-    const actions=document.createElement('span'); actions.className='b-actions';
-    const edit=document.createElement('button'); edit.className='icon-btn'; edit.textContent='✏️'; edit.title='Редактировать';
-    const del=document.createElement('button'); del.className='icon-btn'; del.textContent='🗑'; del.title='Удалить';
-    edit.onclick=e=>{e.stopPropagation(); openBanquetModal(b);};
-    del.onclick=e=>{e.stopPropagation(); deleteBanquet(b.id);};
-    btn.appendChild(dot); btn.appendChild(txt); actions.appendChild(edit); actions.appendChild(del); btn.appendChild(actions);
-    if(selected && selected.k==='b' && selected.id===b.id) btn.classList.add('active');
-    btn.addEventListener('click',()=>{selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id}; renderBanquetBar(); renderWaiters();},{passive:true});
-    btn.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify({k:'b',id:b.id}));});
-    banquetBar.appendChild(btn);
-  });
-}
-function deleteBanquet(id){
-  const a=banquetsForDay(); const i=a.findIndex(x=>x.id===id); if(i>-1) a.splice(i,1);
-  const ass=getDayAssignments(); for(const h in ass){ for(const p in ass[h]){ ass[h][p]=(ass[h][p]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
-  if(selected && selected.k==='b' && selected.id===id) selected=null; save(); renderBanquetBar(); renderColumns();
-}
-
-function hallIcon(n){return ({'Основной зал':'🏛️','Малый (банкетный) зал':'🎉','ВИП-комнаты':'⭐','Веранда':'🌿','Лофт':'🧱','Винная комната':'🍷'})[n]||'🏷️';}
 function renderColumns(){
   col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
-  const by=Object.fromEntries(db.halls.map(h=>[h.name,h]));
   const order=['Основной зал','Малый (банкетный) зал','ВИП-комнаты','Веранда','Лофт','Винная комната'];
+  const byName=Object.fromEntries(db.halls.map(h=>[h.name,h]));
 
-  function mountHall(h,into){
+  function mount(h,into){
     const sec=hallTpl.content.firstElementChild.cloneNode(true);
-    sec.querySelector('.hall-ico').textContent=hallIcon(h.name);
     sec.querySelector('.hall-title').textContent=h.name;
     const grid=sec.querySelector('.pos-grid');
-    (h.positions||[]).forEach(p=>{
+
+    h.positions.forEach(p=>{
       const card=posCardTpl.content.firstElementChild.cloneNode(true);
-      card.querySelector('.pos-title').textContent=p.name||'';
+      card.querySelector('.pos-title').textContent=p.name;
       const counter=card.querySelector('.counter');
       const slot=card.querySelector('.slot');
-      const items=ensurePath(h.id,p.id);
-      drawSlot(items,slot,h.id,p.id);
-      counter.textContent=`${items.length}/${SLOT_LIMIT}`;
-      card.addEventListener('click',ev=>{
-        if(!selected) return;
-        if(ev.target.closest('.assign')) return;
-        if(assignEntityWithLimit(h.id,p.id,selected)){
-          const arr=ensurePath(h.id,p.id);
-          counter.textContent=`${arr.length}/${SLOT_LIMIT}`;
-          drawSlot(arr,slot,h.id,p.id);
-        }
-      },{passive:true});
+      const pick=card.querySelector('.pick');
+      const addBtn=card.querySelector('.addBtn');
+
+      // заполнить дропдаун всеми официантами
+      pick.innerHTML='<option value="">— выбрать официанта —</option>';
+      db.waiters.forEach(w=>{
+        const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; pick.appendChild(opt);
+      });
+
+      const draw=()=>{
+        const arr=ensureSlot(h.id,p.id);
+        slot.innerHTML='';
+        arr.forEach(wid=>{
+          const w=waiterById(wid); if(!w) return;
+          const {bg,fg}=colorForWaiter(wid);
+          const el=document.createElement('div'); el.className='assign'; el.style.background=bg; el.style.color=fg; el.style.borderColor=bg;
+          const nm=document.createElement('div'); nm.className='w-name'; nm.textContent=w.name;
+          const noteTxt=getNotes(wid); if(noteTxt.length){ const nt=document.createElement('div'); nt.className='w-note'; nt.textContent=noteTxt.join(', '); el.appendChild(nt); }
+          const x=document.createElement('button'); x.className='x'; x.title='Убрать'; x.textContent='×';
+          x.onclick=(e)=>{ e.stopPropagation(); removeFrom(h.id,p.id,wid); draw(); };
+          el.appendChild(nm); el.appendChild(x);
+          slot.appendChild(el);
+        });
+        counter.textContent=String(arr.length); // только счётчик, без лимита
+      };
+
+      function addTo(hid,pid,wid){
+        if(!wid) return;
+        const arr=ensureSlot(hid,pid);
+        if(arr.includes(wid)) return;
+        if(arr.length>=3){ alert('Максимум 3 имени в этой зоне.'); return; } // визуальный лимит 3
+        arr.push(wid); save(); draw();
+      }
+      function removeFrom(hid,pid,wid){
+        const arr=ensureSlot(hid,pid); const i=arr.indexOf(wid); if(i>-1) arr.splice(i,1); save();
+      }
+
+      // Клик по карточке — добавление выбранного в шапке
+      card.addEventListener('click',e=>{
+        if(e.target.closest('.adder')||e.target.closest('.assign')) return;
+        if(selected) addTo(h.id,p.id,selected);
+      });
+      // Кнопка "Добавить" из дропдауна
+      addBtn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const wid=pick.value; addTo(h.id,p.id,wid); pick.value='';
+      });
+
+      draw();
       grid.appendChild(card);
     });
+
     into.appendChild(sec);
   }
 
-  order.forEach((name,idx)=>{
-    const h=by[name];
-    if(!h) return;
-    if(idx<2) mountHall(h,col1);
-    else if(idx==2) mountHall(h,col2);
-    else mountHall(h,col3);
+  order.forEach((n,i)=>{
+    const h=byName[n]; if(!h) return;
+    if(i<2) mount(h,col1);
+    else if(i===2) mount(h,col2);
+    else mount(h,col3);
   });
 }
 
-function drawSlot(items,slot,hid,pid){
-  slot.innerHTML='';
-  if(!items.length){
-    const e=document.createElement('div'); e.className='muted'; e.textContent='—'; slot.appendChild(e);
-    return;
+/* ====== Комментарии к официанту ====== */
+function openCommentsModal(wid, wname){
+  const presets=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете'];
+  const wrap=document.createElement('div'); wrap.style.position='fixed'; wrap.style.inset='0'; wrap.style.background='rgba(0,0,0,.25)';
+  wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.justifyContent='center'; wrap.style.padding='10px'; wrap.innerHTML =
+    '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px;min-width:min(96vw,420px)">' +
+      '<div style="font-weight:900;margin-bottom:6px">Комментарии — '+wname+'</div>'+
+      '<div id="presetBox" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>'+
+      '<div id="tagList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>'+
+      '<div style="display:flex;gap:6px"><input id="cInp" placeholder="например: до 18:00" style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px"/><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>'+
+    '</div>';
+  document.body.appendChild(wrap);
+
+  const box=wrap.querySelector('#presetBox'), list=wrap.querySelector('#tagList'), inp=wrap.querySelector('#cInp');
+  function redraw(){
+    list.innerHTML='';
+    getNotes(wid).forEach((t,i)=>{
+      const tag=document.createElement('span');
+      tag.style.cssText='font-size:11px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:6px';
+      const x=document.createElement('b'); x.textContent='×'; x.style.cssText='cursor:pointer;color:#991b1b';
+      x.onclick=()=>{ delNote(wid,i); redraw(); renderColumns(); renderWaiters(); };
+      tag.appendChild(document.createTextNode(t)); tag.appendChild(x); list.appendChild(tag);
+    });
   }
-  items.forEach(ent=>{
-    const el=document.createElement('div'); el.className='assign'; el.setAttribute('draggable','true');
-    const dot=document.createElement('span'); dot.className='dot';
-    const name=document.createElement('div'); name.className='w-name';
-    const note=document.createElement('div'); note.className='w-note';
-    const x=document.createElement('button'); x.className='x'; x.title='Удалить из зоны'; x.textContent='×';
-
-    if(ent.k==='w'){
-      const w=waiterById(ent.id), {bg}=colorForWaiter(ent.id);
-      dot.style.background=bg; name.textContent=w?w.name:'—';
-      const n=getNotes(ent.id); note.textContent=n&&n.length?n.join(', '):'';
-    }else{
-      const b=banquetById(ent.id), meta=BANQUET_TYPES[b?b.type:'Другой'];
-      dot.style.background=meta.bg;
-      const t=b?(b.type==='Другой'&&b.other?('Другое: '+b.other):meta.label):meta.label;
-      name.textContent=b?`${t} · ${b.people}`:meta.label;
-      note.textContent=b&&b.note?b.note:'';
-    }
-
-    x.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      removeEntity(hid,pid,ent);
-      const arr=ensurePath(hid,pid);
-      slot.closest('.pos-card').querySelector('.counter').textContent=`${arr.length}/${SLOT_LIMIT}`;
-      drawSlot(arr,slot,hid,pid);
-    });
-
-    el.appendChild(dot); el.appendChild(name); if(note.textContent) el.appendChild(note); el.appendChild(x);
-
-    el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify({k:ent.k,id:ent.id}));});
-    slot.addEventListener('dragover',e=>{e.preventDefault(); slot.classList.add('highlight');});
-    slot.addEventListener('dragleave',()=>slot.classList.remove('highlight'));
-    slot.addEventListener('drop',e=>{
-      e.preventDefault(); slot.classList.remove('highlight');
-      const p=JSON.parse(e.dataTransfer.getData('text/plain')||'{}'); if(!p.k||!p.id) return;
-      if(assignEntityWithLimit(hid,pid,{k:p.k,id:p.id})){
-        const arr=ensurePath(hid,pid);
-        slot.closest('.pos-card').querySelector('.counter').textContent=`${arr.length}/${SLOT_LIMIT}`;
-        drawSlot(arr,slot,hid,pid);
-      }
-    });
-
-    slot.appendChild(el);
+  presets.forEach(p=>{
+    const b=document.createElement('button'); b.textContent=p; b.className='btn-acc'; b.style.cssText='border:1px dashed #cbd5e1;border-radius:999px;padding:4px 8px;background:#fff;font-size:11px';
+    b.onclick=()=>{ const cur=getNotes(wid); const i=cur.indexOf(p); if(i===-1) addNote(wid,p); else delNote(wid,i); redraw(); renderColumns(); renderWaiters(); };
+    box.appendChild(b);
   });
+  wrap.querySelector('#cAdd').onclick=()=>{ const v=(inp.value||'').trim(); if(!v) return; addNote(wid,v); inp.value=''; redraw(); renderColumns(); renderWaiters(); };
+  wrap.querySelector('#cClose').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+  redraw();
 }
 
-function assignEntityWithLimit(hid,pid,ent){
-  const arr=ensurePath(hid,pid);
-  if(arr.some(x=>x.k===ent.k&&x.id===ent.id)) return false;
-  if(arr.length>=SLOT_LIMIT){ alert(`Лимит ${SLOT_LIMIT} в этой позиции.`); return false; }
-  arr.push({k:ent.k,id:ent.id}); save(); return true;
-}
-function removeEntity(hid,pid,ent){
-  const arr=ensurePath(hid,pid); const i=arr.findIndex(x=>x.k===ent.k&&x.id===ent.id);
-  if(i>-1) arr.splice(i,1); save();
-}
+/* ====== Верхние кнопки ====== */
+document.getElementById('addWaiter').onclick=()=>{
+  const name=prompt('Имя официанта'); if(!name) return;
+  if(db.waiters.some(w=>w.name.toLowerCase()===name.trim().toLowerCase())) return alert('Такое имя уже есть.');
+  db.waiters.push({id:UUID(),name:name.trim()}); save(); renderWaiters();
+};
+document.getElementById('copy').onclick=async()=>{
+  const txt=exportText(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
+};
+document.getElementById('share').onclick=async()=>{
+  const text=exportText(); try{ if(navigator.share){ await navigator.share({title:'Распределение',text}); } else { await navigator.clipboard.writeText(text); alert('Скопировано'); } }catch{}
+};
+document.getElementById('resetDay').onclick=()=>{
+  if(!confirm('Очистить назначения на эту дату?')) return;
+  const k=dateKey(); db.assignments[k]={}; db.notes[k]={}; save(); renderColumns(); renderWaiters();
+};
+document.getElementById('hardReset').onclick=()=>{
+  if(!confirm('Полный сброс всех данных?')) return;
+  localStorage.removeItem(STORAGE_KEY); location.reload();
+};
+document.getElementById('date').onchange=()=>{ renderColumns(); renderWaiters(); };
 
-function openCommentsModal(wid){
-  const w=waiterById(wid); if(!w) return;
-  const html =
-    '<h3 style="margin:0">Комментарии — '+esc(w.name)+' ('+fmtRU(dateKey())+')</h3>'+
-    '<div class="presets" id="presetBox"></div>'+
-    '<div class="tags" id="cList" style="margin-top:4px"></div>'+
-    '<div class="row"><label>Новый</label><input id="cInput" placeholder="например: до 18:00; стажёр" /></div>'+
-    '<div class="row" style="justify-content:flex-end; gap:8px"><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>';
-  openModal(html,(dlg,close)=>{
-    const cList=dlg.querySelector('#cList'), cInput=dlg.querySelector('#cInput');
-    const draw=()=>{ cList.innerHTML=''; getNotes(wid).forEach((t,i)=>{ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=t+' '; const x=document.createElement('span'); x.className='x'; x.textContent='×'; x.onclick=()=>{delNote(wid,i); renderWaiters(); renderColumns(); draw();}; tag.appendChild(x); cList.appendChild(tag); }); };
-    const box=dlg.querySelector('#presetBox'); box.innerHTML='';
-    const cur=getNotes(wid);
-    PRESET_COMMENTS.forEach(label=>{
-      const b=document.createElement('button'); b.type='button'; b.className='preset'+(cur.includes(label)?' on':''); b.textContent=label;
-      b.onclick=()=>{ const idx=cur.indexOf(label); if(idx===-1){addNote(wid,label);} else {delNote(wid,idx);} renderWaiters(); renderColumns(); draw(); b.classList.toggle('on'); };
-      box.appendChild(b);
-    });
-    draw();
-    dlg.querySelector('#cAdd').onclick=()=>{ const v=(cInput.value||'').trim(); if(!v) return; addNote(wid,v); cInput.value=''; renderWaiters(); renderColumns(); draw(); };
-    dlg.querySelector('#cClose').onclick=close;
-  });
-}
-
-function openBanquetModal(existing){
-  const isEdit=!!existing;
-  const html =
-    `<h3 style="margin:0">${isEdit?'Изменить банкет':'Новый банкет'} — ${fmtRU(dateKey())}</h3>`+
-    '<div class="row"><label>Кол-во персон</label><input id="bnPeople" type="number" min="1" inputmode="numeric" placeholder="например, 25" /></div>'+
-    '<div class="row"><label>Вид</label><select id="bnType"><option>ДР</option><option>Свадьба</option><option>Корпоратив</option><option>Конференция</option><option>День памяти</option><option>Другой</option></select></div>'+
-    '<div class="row" id="bnOtherRow" style="display:none"><label>Другой</label><input id="bnOther" /></div>'+
-    '<div class="row"><label>Комментарий</label><textarea id="bnNote" rows="3" placeholder="Пожелания, тайминг, контакты..."></textarea></div>'+
-    `<div class="row" style="justify-content:flex-end; gap:8px"><button id="bnSave" class="btn-acc">${isEdit?'Сохранить':'Добавить'}</button><button id="bnClose">Закрыть</button></div>`;
-  openModal(html,(dlg,close)=>{
-    const people=dlg.querySelector('#bnPeople'), type=dlg.querySelector('#bnType'), otherRow=dlg.querySelector('#bnOtherRow'), other=dlg.querySelector('#bnOther'), note=dlg.querySelector('#bnNote');
-    type.onchange=()=>{ otherRow.style.display=(type.value==='Другой')?'flex':'none'; };
-    if(isEdit){ people.value=existing.people; type.value=existing.type; note.value=existing.note||''; if(existing.type==='Другой'){ otherRow.style.display='flex'; if(other) other.value=existing.other||''; } }
-    dlg.querySelector('#bnSave').onclick=()=>{
-      const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите корректное число персон.');
-      if(isEdit){ existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim(); }
-      else{ banquetsForDay().push({ id:UUID(), people:n, type:type.value, other:(other&&other.value||'').trim(), note:(note.value||'').trim() }); }
-      save(); renderBanquetBar(); renderColumns(); close();
-    };
-    dlg.querySelector('#bnClose').onclick=close;
-  });
-}
-
-function buildShareText(){
-  const d=dateKey(); const lines=['Распределение — '+fmtRU(d)];
-  const ass=getDayAssignments();
+/* ====== Экспорт ====== */
+function exportText(){
+  const d=dateKey(); const lines=['Распределение '+d];
+  const day=getDay();
   db.halls.forEach(h=>{
     lines.push('\n'+h.name+':');
-    (h.positions||[]).forEach(p=>{
-      const arr=(ass[h.id]&&ass[h.id][p.id])||[];
-      const title=p.name||'Без названия';
-      if(arr.length===0){ lines.push('• '+title+': —'); return; }
-      const people=arr.map(e=>{
-        if(e.k==='w'){ const w=waiterById(e.id); if(!w) return '—'; const cm=getNotes(e.id); return w.name+(cm.length?' ('+cm.join(', ')+')':''); }
-        const b=banquetById(e.id); if(!b) return 'Банкет'; const meta=BANQUET_TYPES[b.type]; const t=b.type==='Другой'&&b.other?('Другое: '+b.other):meta.label;
-        return t+' · '+b.people+(b.note?' ('+b.note+')':'');
-      }).join(' | ');
-      lines.push('• '+title+': '+people+`  (${arr.length}/${SLOT_LIMIT})`);
+    h.positions.forEach(p=>{
+      const arr=(day[h.id]&&day[h.id][p.id])||[];
+      const names=arr.map(id=>waiterById(id)?.name||'—').join(' | ') || '—';
+      lines.push('• '+p.name+': '+names+'  ('+arr.length+')');
     });
   });
-  const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> (BANQUET_TYPES[b.type].label)+' · '+b.people).join('; ')); }
   return lines.join('\n');
 }
-async function share(){
-  const text=buildShareText(), title='Распределение '+fmtRU(dateKey());
-  try{ if(navigator.share){ await navigator.share({title,text}); return; } }catch(_){}
-  try{ await navigator.clipboard.writeText(text); alert('Текст скопирован. Вставьте в WhatsApp/Telegram.'); }
-  catch(_){
-    const blob=new Blob([text],{type:'text/plain'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=title+'.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-}
 
-function openModal(html,onMount){
-  const wrap=document.createElement('div'); wrap.className='modal'; wrap.innerHTML='<div class="dialog">'+html+'</div>'; document.body.appendChild(wrap);
-  function close(){ wrap.remove(); }
-  wrap.addEventListener('click',e=>{ if(e.target===wrap) close(); },{passive:true});
-  onMount && onMount(wrap.querySelector('.dialog'), close);
-  return {close};
-}
-
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ selected=null; renderWaiters(); renderBanquetBar(); }});
-document.getElementById('copy').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(buildShareText()); alert('Скопировано.'); }catch(e){ console.error(e); }});
-document.getElementById('save').addEventListener('click',()=>{ save(); alert('Сохранено'); });
-document.getElementById('share').addEventListener('click',share);
-document.getElementById('resetDay').addEventListener('click',()=>{ if(!confirm('Очистить назначения и комментарии на эту дату?')) return; const k=dateKey(); db.assignments[k]={}; db.dayNotes[k]={}; save(); renderAll(); });
-document.getElementById('hardReset').addEventListener('click',()=>{
-  if(!confirm('Полный сброс данных приложения (все даты и банкеты)?')) return;
-  localStorage.removeItem(STORAGE_KEY); location.reload();
-});
-document.getElementById('date').addEventListener('change',()=>renderAll());
-document.getElementById('addWaiter').addEventListener('click',()=>{
-  const html =
-    '<h3 style="margin:0">Новый официант</h3>'+
-    '<div class="row"><label>Имя</label><input id="wName" placeholder="например: Павел" /></div>'+
-    '<div class="row" style="justify-content:flex-end; gap:8px"><button id="wSave" class="btn-acc">Добавить</button><button id="wClose">Отмена</button></div>';
-  openModal(html,(dlg,close)=>{
-    const input=dlg.querySelector('#wName');
-    dlg.querySelector('#wSave').onclick=()=>{ if(addWaiter(input.value)) close(); };
-    dlg.querySelector('#wClose').onclick=close;
-    input.focus();
-  });
-});
-
-function renderAll(){ renderWaiters(); renderBanquetBar(); renderColumns(); }
-dateEl.value=todayISO(); renderAll();
-
-if ('serviceWorker' in navigator) {
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    location.reload();
-  });
-
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('./sw.js?ver=20');
-      if (reg.update) reg.update();
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateBanner(() => nw.postMessage({type:'SKIP_WAITING'}));
-          }
-        });
-      });
-      if (reg.waiting && navigator.serviceWorker.controller) {
-        showUpdateBanner(() => reg.waiting.postMessage({type:'SKIP_WAITING'}));
-      }
-    } catch (e) { console.error('SW registration failed:', e); }
-  });
-
-  function showUpdateBanner(apply){
-    const bar=document.getElementById('upd'); const btn=document.getElementById('updBtn');
-    bar.classList.add('show'); btn.onclick=apply;
-  }
-
-  document.getElementById('refreshApp').addEventListener('click', async () => {
-    try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister()));
-    } catch {}
-    if ('caches' in window) {
-      try {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      } catch {}
-    }
-    location.href = location.pathname + '?v=20';
-  });
-}
-} // boot
-</script>
-
-<script>
-// no-op fallback
+/* ====== Старт ====== */
+function renderAll(){ renderWaiters(); renderColumns(); }
+dateEl.value = todayISO();
+renderAll();
 </script>
 </body>
 </html>
