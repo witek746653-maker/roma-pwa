@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+/>
+<meta name="format-detection" content="telephone=no" />
+<title>Распределение — мобильная версия (v16, PWA)</title>
+
+<!-- PWA hooks -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<style>
+  :root{
+    --bg:#fff; --text:#0f172a; --muted:#6b7280; --accent:#2563eb; --border:#e5e7eb; --panel:#f8fafc; --danger:#ef4444;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:rgba(0,0,0,0)}
+  html,body{height:100%}
+  body{margin:0;font:13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Noto Sans,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* Шапка: слева (дата/кнопки) · по центру (банкет-бар) · справа (официанты) */
+  .header{
+    position:sticky; top:0; z-index:10;
+    display:grid; grid-template-columns:1fr; gap:8px;
+    padding:8px; border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,.98); backdrop-filter:saturate(1.05) blur(2px)
+  }
+  @media (min-width:820px){
+    .header{ grid-template-columns:auto 1fr auto; align-items:start }
+  }
+
+  .left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  label{font-size:11px;color:var(--muted)}
+  .field{display:flex;flex-direction:column;gap:2px}
+  input[type="date"]{
+    border:1px solid var(--border); border-radius:10px; padding:8px 10px; min-height:36px;
+    background:#fff; color:var(--text); outline:none; font-size:14px
+  }
+  input[type="date"]:focus{border-color:var(--accent); box-shadow:0 0 0 2px rgba(37,99,235,.12)}
+  button{
+    appearance:none; border:1px solid var(--border); background:#fff; color:var(--text);
+    padding:8px 10px; min-height:36px; border-radius:10px; cursor:pointer; font-size:13px;
+    display:inline-flex; gap:6px; align-items:center; white-space:nowrap; touch-action:manipulation
+  }
+  button:active{transform:scale(.98)}
+  .btn-acc{border-color:rgba(37,99,235,.35)}
+  .btn-danger{border-color:rgba(239,68,68,.45); color:#b91c1c}
+
+  /* Банкет-бар (центр) */
+  .center{display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center}
+  .b-chip{
+    border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fff;
+    display:inline-flex; gap:6px; align-items:center; font-weight:700; font-size:13px; cursor:pointer
+  }
+  .b-chip.active{outline:2px solid rgba(37,99,235,.25)}
+  .b-dot{width:12px;height:12px;border-radius:999px;border:1px solid #0002}
+  .b-actions{display:inline-flex;gap:4px;margin-left:2px}
+  .icon-btn{border:1px solid var(--border); background:#fff; border-radius:7px; padding:4px 6px; font-size:12px; cursor:pointer}
+  .b-add{margin-left:4px}
+
+  /* Официанты (справа на десктопе, в шапке на мобиле) */
+  .waiters{
+    display:grid; grid-auto-flow:column; grid-template-rows:repeat(2,auto);
+    gap:6px 8px; overflow:auto; padding-bottom:2px; justify-items:start; -webkit-overflow-scrolling:touch
+  }
+  .chip{
+    border:1px solid #c7d2fe; border-radius:999px; padding:6px 10px;
+    display:inline-flex; align-items:center; gap:6px; background:#eef2ff; color:#0b1e4a; cursor:pointer
+  }
+  .chip .name{font-weight:800;font-size:13px}
+  .chip .note-dot{font-size:12px;color:#374151}
+  .chip .edit{border:1px solid var(--border); border-radius:8px; padding:2px 6px; font-size:12px; background:#fff}
+  .chip.active{outline:2px solid rgba(37,99,235,.25)}
+
+  /* Колонки */
+  .columns{display:grid; gap:8px; padding:8px}
+  @media (min-width:1000px){ .columns{ grid-template-columns:repeat(3,1fr) } }
+  @media (max-width:999px){ .columns{ grid-template-columns:1fr } }
+
+  details.panel{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px}
+  summary{list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px}
+  summary::-webkit-details-marker{display:none}
+  .hall-ico{font-size:15px}
+  .hall-title{font-weight:900; font-size:14px; margin:0}
+
+  .pos-grid{display:grid; grid-template-columns:1fr; gap:8px; margin-top:8px}
+  .pos-card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:6px}
+  .pos-head{display:flex; align-items:center; gap:8px}
+  .pos-ico{font-size:14px}
+  .pos-title{font-weight:800; font-size:13px}
+  .muted{color:var(--muted); font-size:12px}
+
+  /* Слоты */
+  .slot{
+    display:flex; flex-wrap:wrap; gap:8px;
+    border:2px dashed #e2e8f0; border-radius:10px; padding:8px; min-height:44px
+  }
+  .slot.highlight{border-color:var(--accent)}
+  .assign{
+    display:flex; align-items:center; gap:8px;
+    border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fafafa;
+    flex:1 1 calc(50% - 8px); min-width:160px; max-width:100%
+  }
+  @media (min-width:640px){ .assign{flex:1 1 calc(33.333% - 8px)} }
+  .dot{width:12px;height:12px;border-radius:999px;border:1px solid #0002;flex:0 0 auto}
+  .assign .w-name{font-weight:800; font-size:13px}
+  .assign .w-note{font-size:11px; color:#6b7280}
+
+  /* Модалка + пресеты */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.28); display:flex; align-items:center; justify-content:center; padding:12px; z-index:40}
+  .dialog{background:#fff; border:1px solid var(--border); border-radius:14px; width:min(560px,96vw); padding:12px; display:flex; flex-direction:column; gap:10px}
+  .row{display:flex; gap:8px; align-items:center}
+  .row>label{min-width:120px; color:var(--muted); font-size:13px}
+  .row>input,.row>select,.row>textarea{
+    flex:1; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:14px
+  }
+  .row>textarea{min-height:80px}
+  .tags{display:flex; gap:6px; flex-wrap:wrap}
+  .tag{font-size:12px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:999px; padding:2px 10px; display:inline-flex; gap:6px; align-items:center}
+  .tag .x{cursor:pointer; font-weight:800}
+  .presets{display:flex; flex-wrap:wrap; gap:6px}
+  .preset{border:1px dashed #cbd5e1; border-radius:999px; padding:5px 10px; cursor:pointer; font-size:12px}
+  .preset.on{background:#e2e8f0; border-style:solid}
+</style>
+</head>
+<body>
+  <!-- Шапка -->
+  <div class="header">
+    <div class="left">
+      <div class="field">
+        <label for="date">Дата</label>
+        <input id="date" type="date" />
+      </div>
+      <button id="share" class="btn-acc">Поделиться</button>
+      <button id="copy">Копировать</button>
+      <button id="save">Сохранить</button>
+      <button id="resetDay" class="btn-danger">Очистить</button>
+    </div>
+
+    <!-- Панель банкетов -->
+    <div class="center" id="banquetBar" aria-label="Банкеты"></div>
+
+    <!-- Официанты -->
+    <div class="waiters" id="waiterRow" aria-label="Официанты (тапните имя, затем зону)"></div>
+  </div>
+
+  <!-- Колонки -->
+  <div class="columns">
+    <div class="col" id="col1"></div>
+    <div class="col" id="col2"></div>
+    <div class="col" id="col3"></div>
+  </div>
+
+  <!-- Шаблоны -->
+  <template id="chipTpl">
+    <div class="chip" tabindex="0">
+      <span class="name"></span>
+      <span class="note-dot"></span>
+      <button class="edit" title="Комментарии">💬</button>
+    </div>
+  </template>
+
+  <template id="hallTpl">
+    <details class="panel" open>
+      <summary><span class="hall-ico"></span><span class="hall-title"></span></summary>
+      <div class="pos-grid"></div>
+    </details>
+  </template>
+
+  <template id="posCardTpl">
+    <div class="pos-card">
+      <div class="pos-head">
+        <span class="pos-ico">🪑</span>
+        <div class="pos-title"></div>
+        <div class="muted counter" style="margin-left:auto"></div>
+      </div>
+      <div class="slot"></div>
+    </div>
+  </template>
+
+<script>
+'use strict';
+
+/* ====== Utils ====== */
+const UUID = (crypto && crypto.randomUUID) ? () => crypto.randomUUID()
+  : () => 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+const fmtRU = iso => { const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; };
+const esc = s => String(s).replace(/[&<>\"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+/* ====== Data ====== */
+const STORAGE_KEY = 'waiters-rota-v16';
+const SLOT_LIMIT = 7;
+const CHIP_COLORS = [['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
+const BANQUET_TYPES = {
+  'ДР':{label:'🎉 ДР',bg:'#FFF1D6',fg:'#7a3d00'},
+  'Свадьба':{label:'💍 Свадьба',bg:'#FFE8F2',fg:'#7a003a'},
+  'Корпоратив':{label:'🏢 Корпоратив',bg:'#E8F7FF',fg:'#0b3d5a'},
+  'Конференция':{label:'📣 Конференция',bg:'#E8EEFF',fg:'#1a2a7a'},
+  'День памяти':{label:'🕯️ День памяти',bg:'#F4F4F5',fg:'#111827'},
+  'Другой':{label:'🏷️ Другое',bg:'#EAFBEA',fg:'#104a20'}
+};
+const PRESET_COMMENTS = [
+  'Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ',
+  'Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете'
+];
+const CANON_HALLS = [
+  { name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум'] },
+  { name:'Малый (банкетный) зал', positions:[''] },
+  { name:'ВИП-комнаты', positions:['Большой ВИП','Малый ВИП','Каюта','Лиенда'] },
+  { name:'Веранда', positions:['Веранда 1','Веранда 2'] },
+  { name:'Лофт', positions:[''] },
+  { name:'Винная комната', positions:[''] },
+];
+
+/* ====== DB ====== */
+function buildFreshDB(){
+  return {
+    halls: CANON_HALLS.map(h=>({ id: UUID(), name:h.name, positions: h.positions.map(n=>({id:UUID(), name:n})) })),
+    waiters: ['Игорь','Виктор','Роман','Элона','Полина','Ксения','Наталья Ч.','Наталья В.','Анастасия','Екатерина'].map(n=>({id:UUID(), name:n})),
+    assignments:{}, banquets:{}, dayNotes:{}
+  };
+}
+function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch{ return null; } }
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+let db = load() || buildFreshDB();
+
+/* ====== Refs & state ====== */
+const dateEl = document.getElementById('date');
+const waiterRow = document.getElementById('waiterRow');
+const banquetBar = document.getElementById('banquetBar');
+const col1 = document.getElementById('col1'), col2=document.getElementById('col2'), col3=document.getElementById('col3');
+const chipTpl = document.getElementById('chipTpl'), hallTpl = document.getElementById('hallTpl'), posCardTpl=document.getElementById('posCardTpl');
+
+let selected = null; // {k:'w'|'b', id}
+
+/* ====== Day helpers ====== */
+function todayISO(){ const d=new Date(), tz=d.getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10); }
+function dateKey(){ return dateEl.value || todayISO(); }
+function getDayAssignments(){ const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k]; }
+function ensurePath(hid,pid){ const ass=getDayAssignments(); if(!ass[hid]) ass[hid]={}; if(!Array.isArray(ass[hid][pid])) ass[hid][pid]=[]; return ass[hid][pid]; }
+function waiterById(id){ return db.waiters.find(w=>w.id===id); }
+function colorForWaiter(id){ const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}; }
+function banquetsForDay(){ const k=dateKey(); if(!db.banquets[k]) db.banquets[k]=[]; return db.banquets[k]; }
+function banquetById(id){ return banquetsForDay().find(b=>b.id===id); }
+function notesForDay(){ const k=dateKey(); if(!db.dayNotes[k]) db.dayNotes[k]={}; return db.dayNotes[k]; }
+function getNotes(wid){ const m=notesForDay(); return m[wid] || (m[wid]=[]); }
+function addNote(wid,t){ const a=getNotes(wid); if(!a.includes(t)) a.push(t); save(); }
+function delNote(wid,idx){ const a=getNotes(wid); a.splice(idx,1); save(); }
+
+/* ====== Waiter chips ====== */
+function renderWaiters(){
+  waiterRow.innerHTML='';
+  db.waiters.forEach(w=>{
+    const chip=chipTpl.content.firstElementChild.cloneNode(true);
+    chip.querySelector('.name').textContent=w.name;
+    chip.querySelector('.note-dot').textContent=getNotes(w.id).length?'•':'';
+    const {bg,fg}=colorForWaiter(w.id); chip.style.background=bg; chip.style.color=fg; chip.style.borderColor=bg;
+    if(selected && selected.k==='w' && selected.id===w.id) chip.classList.add('active');
+    chip.addEventListener('click', e=>{
+      if(e.target.classList.contains('edit')) return;
+      selected = (selected && selected.k==='w' && selected.id===w.id) ? null : {k:'w', id:w.id};
+      renderWaiters(); renderBanquetBar();
+    }, {passive:true});
+    chip.querySelector('.edit').addEventListener('click', e=>{ e.stopPropagation(); openCommentsModal(w.id); });
+    waiterRow.appendChild(chip);
+  });
+}
+
+/* ====== Banquet bar ====== */
+const BTYPE = t => BANQUET_TYPES[t] || BANQUET_TYPES['Другой'];
+function renderBanquetBar(){
+  banquetBar.innerHTML='';
+  const addBtn=document.createElement('button'); addBtn.className='b-chip b-add'; addBtn.textContent='+ Банкет';
+  addBtn.addEventListener('click', ()=>openBanquetModal());
+  banquetBar.appendChild(addBtn);
+
+  banquetsForDay().forEach(b=>{
+    const meta=BTYPE(b.type);
+    const btn=document.createElement('div'); btn.className='b-chip'; btn.setAttribute('draggable','true');
+    btn.style.background=meta.bg; btn.style.color=meta.fg; btn.style.borderColor=meta.bg;
+
+    const dot=document.createElement('span'); dot.className='b-dot'; dot.style.background=meta.bg;
+    const title = b.type==='Другой' && b.other ? ('Другое: '+b.other) : meta.label;
+    const text=document.createElement('span'); text.textContent = `${title} · ${b.people}`;
+
+    const actions=document.createElement('span'); actions.className='b-actions';
+    const edit=document.createElement('button'); edit.className='icon-btn'; edit.title='Редактировать'; edit.textContent='✏️';
+    const del =document.createElement('button'); del.className='icon-btn'; del.title='Удалить'; del.textContent='🗑';
+
+    edit.onclick=(e)=>{ e.stopPropagation(); openBanquetModal(b); };
+    del.onclick=(e)=>{ e.stopPropagation(); deleteBanquet(b.id); };
+
+    btn.appendChild(dot); btn.appendChild(text); actions.appendChild(edit); actions.appendChild(del); btn.appendChild(actions);
+
+    if(selected && selected.k==='b' && selected.id===b.id) btn.classList.add('active');
+    btn.addEventListener('click', ()=>{ selected = (selected && selected.k==='b' && selected.id===b.id) ? null : {k:'b', id:b.id}; renderBanquetBar(); renderWaiters(); }, {passive:true});
+    btn.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', JSON.stringify({k:'b', id:b.id})); });
+    banquetBar.appendChild(btn);
+  });
+}
+function deleteBanquet(id){
+  const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id);
+  if(i>-1) arr.splice(i,1);
+  const ass=getDayAssignments();
+  for(const h in ass){ for(const p in ass[h]){ ass[h][p]=(ass[h][p]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
+  if(selected && selected.k==='b' && selected.id===id) selected=null;
+  save(); renderBanquetBar(); renderColumns();
+}
+
+/* ====== Columns & slots ====== */
+function hallIcon(name){ return ({'Основной зал':'🏛️','Малый (банкетный) зал':'🎉','ВИП-комнаты':'⭐','Веранда':'🌿','Лофт':'🧱','Винная комната':'🍷'})[name] || '🏷️'; }
+
+function renderColumns(){
+  col1.innerHTML=''; col2.innerHTML=''; col3.innerHTML='';
+  const byName = Object.fromEntries(db.halls.map(h=>[h.name,h]));
+
+  function mountHall(hall, into){
+    const sec=hallTpl.content.firstElementChild.cloneNode(true);
+    sec.querySelector('.hall-ico').textContent=hallIcon(hall.name);
+    sec.querySelector('.hall-title').textContent=hall.name;
+    const grid=sec.querySelector('.pos-grid');
+
+    (hall.positions||[]).forEach(p=>{
+      const card=posCardTpl.content.firstElementChild.cloneNode(true);
+      card.querySelector('.pos-title').textContent = p.name || '';
+      const counter = card.querySelector('.counter');
+      const slot = card.querySelector('.slot');
+      const items = ensurePath(hall.id,p.id);
+      drawSlot(items, slot, hall.id, p.id);
+      counter.textContent = `${items.length}/${SLOT_LIMIT}`;
+
+      // Добавление тапом
+      card.addEventListener('click', (ev)=>{
+        if(!selected) return;
+        if(ev.target.closest('.assign')) return;
+        if(assignEntityWithLimit(hall.id,p.id,selected)){
+          const arr=ensurePath(hall.id,p.id);
+          counter.textContent = `${arr.length}/${SLOT_LIMIT}`;
+          drawSlot(arr, slot, hall.id, p.id);
+        }
+      }, {passive:true});
+
+      grid.appendChild(card);
+    });
+
+    into.appendChild(sec);
+  }
+
+  mountHall(byName['Основной зал'], col1);
+  mountHall(byName['Малый (банкетный) зал'], col1);
+  mountHall(byName['ВИП-комнаты'], col2);
+  mountHall(byName['Веранда'], col3);
+  mountHall(byName['Лофт'], col3);
+  mountHall(byName['Винная комната'], col3);
+}
+
+function drawSlot(items, slot, hallId, posId){
+  slot.innerHTML='';
+  if(!items.length){
+    const empty=document.createElement('div'); empty.className='muted'; empty.textContent='—'; slot.appendChild(empty);
+  }else{
+    items.forEach(ent=>{
+      const el=document.createElement('div'); el.className='assign'; el.setAttribute('draggable','true');
+      const dot=document.createElement('span'); dot.className='dot';
+      const name=document.createElement('div'); name.className='w-name';
+      const note=document.createElement('div'); note.className='w-note';
+
+      if(ent.k==='w'){
+        const w=waiterById(ent.id); const {bg}=colorForWaiter(ent.id);
+        dot.style.background=bg; name.textContent = w? w.name : '—';
+        const n=getNotes(ent.id); note.textContent = (n && n.length)? n.join(', ') : '';
+      }else{
+        const b=banquetById(ent.id); const meta=b?BTYPE(b.type):BTYPE('Другой');
+        dot.style.background=meta.bg;
+        const title = b ? (b.type==='Другой' && b.other ? ('Другое: '+b.other) : meta.label) : meta.label;
+        name.textContent = b ? `${title} · ${b.people}` : meta.label;
+        note.textContent = b && b.note ? b.note : '';
+      }
+
+      el.appendChild(dot); el.appendChild(name); if(note.textContent) el.appendChild(note);
+
+      // Удаление тапом
+      el.addEventListener('click', ()=>{
+        removeEntity(hallId,posId,ent);
+        const arr=ensurePath(hallId,posId);
+        slot.closest('.pos-card').querySelector('.counter').textContent = `${arr.length}/${SLOT_LIMIT}`;
+        drawSlot(arr, slot, hallId, posId);
+      }, {passive:true});
+
+      // DnD (опционально)
+      el.addEventListener('dragstart', e=>{
+        e.dataTransfer.setData('text/plain', JSON.stringify({k:ent.k, id:ent.id}));
+      });
+      slot.addEventListener('dragover', e=>{ e.preventDefault(); slot.classList.add('highlight'); });
+      slot.addEventListener('dragleave', ()=> slot.classList.remove('highlight'));
+      slot.addEventListener('drop', e=>{
+        e.preventDefault(); slot.classList.remove('highlight');
+        const payload=JSON.parse(e.dataTransfer.getData('text/plain')||'{}');
+        if(!payload.k || !payload.id) return;
+        if(assignEntityWithLimit(hallId,posId,{k:payload.k,id:payload.id})){
+          const arr=ensurePath(hallId,posId);
+          slot.closest('.pos-card').querySelector('.counter').textContent = `${arr.length}/${SLOT_LIMIT}`;
+          drawSlot(arr, slot, hallId, posId);
+        }
+      });
+
+      slot.appendChild(el);
+    });
+  }
+}
+
+/* ====== Assign/remove ====== */
+function assignEntityWithLimit(hid,pid,ent){
+  const arr=ensurePath(hid,pid);
+  if(arr.some(x=>x.k===ent.k && x.id===ent.id)) return false;
+  if(arr.length >= SLOT_LIMIT){ alert(`Лимит ${SLOT_LIMIT} в этой позиции.`); return false; }
+  arr.push({k:ent.k,id:ent.id}); save(); return true;
+}
+function removeEntity(hid,pid,ent){
+  const arr=ensurePath(hid,pid); const i=arr.findIndex(x=>x.k===ent.k && x.id===ent.id);
+  if(i>-1) arr.splice(i,1); save();
+}
+
+/* ====== Comments (per day) + presets ====== */
+function openCommentsModal(wid){
+  const w = waiterById(wid); if(!w) return;
+  const html =
+    '<h3 style="margin:0">Комментарии — '+ esc(w.name) +' ('+ fmtRU(dateKey()) +')</h3>'+
+    '<div class="presets" id="presetBox"></div>'+
+    '<div class="tags" id="cList" style="margin-top:4px"></div>'+
+    '<div class="row"><label>Новый</label><input id="cInput" placeholder="например: до 18:00; стажёр" /></div>'+
+    '<div class="row" style="justify-content:flex-end; gap:8px"><button id="cAdd" class="btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>';
+  openModal(html, (dlg, close)=>{
+    const cList=dlg.querySelector('#cList'), cInput=dlg.querySelector('#cInput');
+    const draw=()=>{
+      cList.innerHTML='';
+      getNotes(wid).forEach((t,i)=>{
+        const tag=document.createElement('span'); tag.className='tag'; tag.textContent=t+' ';
+        const x=document.createElement('span'); x.className='x'; x.textContent='×';
+        x.onclick=()=>{ delNote(wid,i); renderWaiters(); renderColumns(); draw(); };
+        tag.appendChild(x); cList.appendChild(tag);
+      });
+    };
+    const box=dlg.querySelector('#presetBox'); box.innerHTML='';
+    const current=getNotes(wid);
+    PRESET_COMMENTS.forEach(label=>{
+      const b=document.createElement('button'); b.type='button'; b.className='preset'+(current.includes(label)?' on':''); b.textContent=label;
+      b.onclick=()=>{ const idx=current.indexOf(label); if(idx===-1){ addNote(wid,label); } else { delNote(wid,idx); } renderWaiters(); renderColumns(); draw(); b.classList.toggle('on'); };
+      box.appendChild(b);
+    });
+    draw();
+    dlg.querySelector('#cAdd').onclick=()=>{ const v=(cInput.value||'').trim(); if(!v) return; addNote(wid,v); cInput.value=''; renderWaiters(); renderColumns(); draw(); };
+    dlg.querySelector('#cClose').onclick=close;
+  });
+}
+
+/* ====== Banquet modal ====== */
+function openBanquetModal(existing){
+  const isEdit=!!existing;
+  const html =
+    `<h3 style="margin:0">${isEdit?'Изменить банкет':'Новый банкет'} — ${fmtRU(dateKey())}</h3>`+
+    '<div class="row"><label>Кол-во персон</label><input id="bnPeople" type="number" min="1" inputmode="numeric" placeholder="например, 25" /></div>'+
+    '<div class="row"><label>Вид</label><select id="bnType"><option>ДР</option><option>Свадьба</option><option>Корпоратив</option><option>Конференция</option><option>День памяти</option><option>Другой</option></select></div>'+
+    '<div class="row" id="bnOtherRow" style="display:none"><label>Другой</label><input id="bnOther" /></div>'+
+    '<div class="row"><label>Комментарий</label><textarea id="bnNote" rows="3" placeholder="Пожелания, тайминг, контакты..."></textarea></div>'+
+    `<div class="row" style="justify-content:flex-end; gap:8px"><button id="bnSave" class="btn-acc">${isEdit?'Сохранить':'Добавить'}</button><button id="bnClose">Закрыть</button></div>`;
+  openModal(html, (dlg, close)=>{
+    const people=dlg.querySelector('#bnPeople'), type=dlg.querySelector('#bnType'), otherRow=dlg.querySelector('#bnOtherRow'), other=dlg.querySelector('#bnOther'), note=dlg.querySelector('#bnNote']);
+    type.onchange=()=>{ otherRow.style.display=(type.value==='Другой')?'flex':'none'; };
+    if(isEdit){
+      people.value=existing.people; type.value=existing.type; note.value=existing.note||'';
+      if(existing.type==='Другой'){ otherRow.style.display='flex'; if(other) other.value=existing.other||''; }
+    }
+    dlg.querySelector('#bnSave').onclick=()=>{
+      const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите корректное число персон.');
+      if(isEdit){ existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim(); }
+      else{ banquetsForDay().push({ id:UUID(), people:n, type:type.value, other:(other&&other.value||'').trim(), note:(note.value||'').trim() }); }
+      save(); renderBanquetBar(); renderColumns(); close();
+    };
+    dlg.querySelector('#bnClose').onclick=close;
+  });
+}
+
+/* ====== Share/Copy ====== */
+function buildShareText(){
+  const d=dateKey(); const lines=['Распределение — '+fmtRU(d)];
+  const ass=getDayAssignments();
+  db.halls.forEach(h=>{
+    lines.push('\n'+h.name+':');
+    (h.positions||[]).forEach(p=>{
+      const arr=(ass[h.id]&&ass[h.id][p.id])||[];
+      const title=p.name||'Без названия';
+      if(arr.length===0){ lines.push('• '+title+': —'); return; }
+      const people=arr.map(e=>{
+        if(e.k==='w'){ const w=waiterById(e.id); if(!w) return '—'; const cm=getNotes(e.id); return w.name+(cm.length?' ('+cm.join(', ')+')':''); }
+        const b=banquetById(e.id); if(!b) return 'Банкет'; const meta=BTYPE(b.type);
+        const t = b.type==='Другой' && b.other? ('Другое: '+b.other) : meta.label;
+        return t+' · '+b.people + (b.note? ' ('+b.note+')':'' );
+      }).join(' | ');
+      lines.push('• '+title+': '+people+`  (${arr.length}/${SLOT_LIMIT})`);
+    });
+  });
+  const bl=banquetsForDay(); if(bl.length){ lines.push('\nБанкеты: '+ bl.map(b=> (BTYPE(b.type).label)+' · '+b.people).join('; ')); }
+  return lines.join('\n');
+}
+async function share(){
+  const text=buildShareText(), title='Распределение '+fmtRU(dateKey());
+  try{ if(navigator.share){ await navigator.share({title,text}); return; } }catch(_){}
+  try{ await navigator.clipboard.writeText(text); alert('Текст скопирован. Вставьте в WhatsApp/Telegram.'); }
+  catch(_){
+    const blob=new Blob([text],{type:'text/plain'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=title+'.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+}
+
+/* ====== Modal + helpers ====== */
+function openModal(html, onMount){
+  const wrap=document.createElement('div'); wrap.className='modal'; wrap.innerHTML='<div class="dialog">'+html+'</div>'; document.body.appendChild(wrap);
+  function close(){ wrap.remove(); }
+  wrap.addEventListener('click', (e)=>{ if(e.target===wrap) close(); }, {passive:true});
+  onMount && onMount(wrap.querySelector('.dialog'), close);
+  return {close};
+}
+
+/* ====== Events & init ====== */
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ selected=null; renderWaiters(); renderBanquetBar(); }});
+document.getElementById('copy').addEventListener('click', async()=>{ try{ await navigator.clipboard.writeText(buildShareText()); alert('Скопировано.'); }catch(e){ console.error(e); }});
+document.getElementById('save').addEventListener('click', ()=>{ save(); alert('Сохранено'); });
+document.getElementById('share').addEventListener('click', share);
+document.getElementById('resetDay').addEventListener('click', ()=>{
+  if(!confirm('Очистить назначения и комментарии на дату?')) return;
+  const k=dateKey(); db.assignments[k]={}; db.dayNotes[k]={}; save(); renderAll();
+});
+document.getElementById('date').addEventListener('change', ()=> renderAll());
+
+function renderAll(){ renderWaiters(); renderBanquetBar(); renderColumns(); }
+dateEl.value = todayISO(); renderAll();
+</script>
+
+<!-- Register service worker for PWA -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(err => console.error('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
