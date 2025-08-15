@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>Распределение официантов — мобильная версия</title>
 
-<!-- PWA -->
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
@@ -65,12 +64,12 @@
   .assign .w-name{font-weight:800;font-size:12px}
   .assign .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
   .assign .w-note{font-size:10px;color:#64748b}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;padding:10px;z-index:50}
-  .dialog{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;min-width:min(96vw,420px);display:flex;flex-direction:column;gap:8px}
-  .row{display:flex;gap:6px;align-items:center}
-  .row>label{min-width:120px;color:#64748b;font-size:12px}
-  .row>input,.row>select,.row>textarea{flex:1;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12px}
-  .row>textarea{min-height:70px}
+  .hall-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+  .hall-pill{border:1px solid #fde68a;background:#fffbeb;border-radius:999px;padding:2px 8px;font-size:11px;display:inline-flex;gap:6px;align-items:center}
+  .hall-pill .tag{background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:1px 4px;font-size:10px;color:#92400e}
+  .hall-pill .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
+  .mini{font-size:11px;color:#475569}
+  .weak{color:#64748b}
   @media (max-width:430px){
     html,body{font-size:11px}
     input[type="date"],button{min-height:26px;font-size:11px}
@@ -81,11 +80,6 @@
   }
 </style>
 </head>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
-</script>
 <body>
   <div id="okbar" class="okbar">✅ JS работает — интерфейс активен</div>
 
@@ -97,7 +91,6 @@ if ('serviceWorker' in navigator) {
         <span id="shiftBadge" class="badge" title="Считается автоматически">👥 В смене: —</span>
       </div>
 
-      <!-- новые кнопки: Undo/Redo, Экспорт/Импорт, Установить -->
       <button id="undoBtn" class="btn" title="Отменить (Undo)">↶ Отменить</button>
       <button id="redoBtn" class="btn" title="Повторить (Redo)">↷ Повторить</button>
 
@@ -157,6 +150,7 @@ if ('serviceWorker' in navigator) {
         <span class="hall-total"></span>
         <span class="hall-brief"></span>
       </summary>
+      <!-- сюда подрисуем .hall-tools при необходимости -->
       <div class="pos-grid"></div>
     </details>
   </template>
@@ -181,7 +175,7 @@ if ('serviceWorker' in navigator) {
     </div>
   </noscript>
 
-<script defer>
+<script>
 (function(){
 'use strict';
 
@@ -189,9 +183,9 @@ function showOK(){ var el=document.getElementById('okbar'); if(el) el.style.disp
 
 /* ====== данные ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v11';
-const MAX_AGE_DAYS=60; // 2 месяца
-const HISTORY_LIMIT=100; // глубина undo
+const STORAGE_KEY='rota-compact-v12';
+const MAX_AGE_DAYS=60;
+const HISTORY_LIMIT=100;
 
 const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
 
@@ -218,13 +212,12 @@ function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new 
 function dateKey(){return $('#date').value || todayISO();}
 function weekdayRU(iso){ const d=new Date(iso+'T00:00'); const w=['вс','пн','вт','ср','чт','пт','сб']; return w[d.getDay()]; }
 function fmtDateRU(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y} (${weekdayRU(iso)})`; }
-function deepCopy(x){ return JSON.parse(JSON.stringify(x)); }
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 
 /* ====== история (Undo/Redo) ====== */
 const history={undo:[], redo:[]};
-function pushHistory(){ // сохраняем СТАРОЕ состояние перед изменением
+function pushHistory(){
   history.undo.push(JSON.stringify(db));
   if(history.undo.length>HISTORY_LIMIT) history.undo.shift();
   history.redo.length=0;
@@ -252,7 +245,7 @@ function updateUndoRedoButtons(){
 /* ====== очистка старых данных ====== */
 function purgeOldData(){
   const now = new Date(todayISO()+'T00:00');
-  ['assignments','notes','banquets','shiftSize'].forEach(key=>{
+  ['assignments','notes','banquets','shiftSize','hallExtras'].forEach(key=>{
     const m=db[key]||{};
     for(const k in m){
       const d=new Date(k+'T00:00');
@@ -268,13 +261,14 @@ function buildDB(){
     halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
     waiters: uniq,
     metaShifts: { primary:[...DEFAULT_PRIMARY], secondary:[...DEFAULT_SECONDARY] },
-    assignments:{}, notes:{}, banquets:{}, shiftSize:{}
+    assignments:{}, notes:{}, banquets:{}, shiftSize:{},
+    hallExtras:{} // date -> hallId -> {hallBanquets:[], sharedWaiter:null}
   };
 }
 let db = load() || buildDB();
 purgeOldData(); save();
 
-/* ====== маппинг ====== */
+/* ====== маппинг и extras ====== */
 function hallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
 function dayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
 function ensureSlot(hid,pid){const a=dayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
@@ -290,8 +284,21 @@ function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
 function uniqueWaitersAll(){
   const ass=dayAss(); const ids=new Set();
   for(const hid in ass){ for(const pid in ass[hid]){ (ass[hid][pid]||[]).forEach(e=>{ if(e.k==='w') ids.add(e.id); }); } }
+  // учтём «общего официанта» ВИПов
+  const extras = hallExtrasForDay();
+  for(const hid in extras){
+    const ex = extras[hid];
+    if(ex && ex.sharedWaiter) ids.add(ex.sharedWaiter);
+  }
   return ids;
 }
+
+/* extras */
+function hallExtrasForDay(){ const k=dateKey(); if(!db.hallExtras[k]) db.hallExtras[k]={}; return db.hallExtras[k]; }
+function getHallExtra(hid){ const map=hallExtrasForDay(); if(!map[hid]) map[hid]={hallBanquets:[], sharedWaiter:null}; return map[hid]; }
+function addHallBanquet(hid,bid){ pushHistory(); const ex=getHallExtra(hid); if(!ex.hallBanquets.includes(bid)) ex.hallBanquets.push(bid); save(); }
+function removeHallBanquet(hid,bid){ pushHistory(); const ex=getHallExtra(hid); ex.hallBanquets = ex.hallBanquets.filter(x=>x!==bid); save(); }
+function setSharedWaiter(hid,wid){ pushHistory(); const ex=getHallExtra(hid); ex.sharedWaiter = wid || null; save(); }
 
 /* ====== шаблоны ====== */
 const chipTpl=document.getElementById('chipTpl');
@@ -339,6 +346,13 @@ function renderWaiterChip(w, isSecondary=false){
     db.waiters=db.waiters.filter(x=>x.id!==w.id);
     db.metaShifts.primary=db.metaShifts.primary.filter(n=>n!==w.name);
     db.metaShifts.secondary=db.metaShifts.secondary.filter(n=>n!==w.name);
+
+    // убираем из sharedWaiter если назначен
+    for(const day in db.hallExtras){
+      const m=db.hallExtras[day]||{};
+      for(const hid in m){ if(m[hid] && m[hid].sharedWaiter===w.id) m[hid].sharedWaiter=null; }
+    }
+
     if(selected && selected.k==='w' && selected.id===w.id) selected=null;
     save(); renderAll();
   });
@@ -363,7 +377,7 @@ function renderWaiters(){
   save();
 }
 
-/* ====== банкеты ====== */
+/* ====== банкеты (верхняя панель) ====== */
 function renderBanquetBar(){
   const bar=$('#banquetBar'); bar.innerHTML='';
   const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
@@ -388,7 +402,10 @@ function renderBanquetBar(){
 function deleteBanquet(id){
   pushHistory();
   const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
+  // удалить в позициях
   const ass=dayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
+  // удалить из hall-wide
+  const extras=hallExtrasForDay(); for(const hid in extras){ if(extras[hid]) extras[hid].hallBanquets = (extras[hid].hallBanquets||[]).filter(bid=>bid!==id); }
   if(selected && selected.k==='b' && selected.id===id) selected=null;
   save(); renderColumns();
 }
@@ -396,19 +413,21 @@ function deleteBanquet(id){
 /* ====== колонки ====== */
 const hallBriefEls=new Map(), hallTotalEls=new Map();
 function renderColumns(){
-  $('#col1').innerHTML=''; $('#col2').innerHTML=''; $('#col3').innerHTML='';
+  // оборачиваем в try/catch на каждый раздел — чтобы ошибка не «съедала» правую колонку
+  const c1=$('#col1'), c2=$('#col2'), c3=$('#col3');
+  c1.innerHTML=''; c2.innerHTML=''; c3.innerHTML='';
   hallBriefEls.clear(); hallTotalEls.clear();
   const map=hallsByName();
-  mountHall(map['Основной зал'], $('#col1'));
-  mountHall(map['Малый (банкетный) зал'], $('#col1'));
-  mountHall(map['ВИП-комнаты'], $('#col2'));
-  mountHall(map['Лофт'], $('#col2'));
-  mountHall(map['Веранда'], $('#col3'));
-  mountHall(map['Винная комната'], $('#col3'));
+  try{ mountHall(map['Основной зал'], c1); }catch(e){ console.error('Основной зал:',e); }
+  try{ mountHall(map['Малый (банкетный) зал'], c1); }catch(e){ console.error('МБЗ:',e); }
+  try{ mountHall(map['ВИП-комнаты'], c2); }catch(e){ console.error('ВИП:',e); }
+  try{ mountHall(map['Лофт'], c2); }catch(e){ console.error('Лофт:',e); }
+  try{ mountHall(map['Веранда'], c3); }catch(e){ console.error('Веранда:',e); }
+  try{ mountHall(map['Винная комната'], c3); }catch(e){ console.error('Винная:',e); }
   updateAllHallTotals(); renderShiftBadge();
 }
 function mountHall(h,into){
-  if(!h) return;
+  if(!h || !into) return;
   const sec=hallTpl.content.firstElementChild.cloneNode(true);
   sec.dataset.hid=h.id;
   sec.querySelector('.hall-title').textContent=(HALL_ICONS[h.name]||'')+' '+h.name;
@@ -416,6 +435,56 @@ function mountHall(h,into){
   const briefEl=sec.querySelector('.hall-brief'); hallBriefEls.set(h.id, briefEl);
   const grid=sec.querySelector('.pos-grid');
 
+  /* tools-панель над сеткой */
+  const tools=document.createElement('div'); tools.className='hall-tools';
+
+  // 1) Банкет для всего Основного зала
+  if(h.name==='Основной зал'){
+    const addHallB=document.createElement('button');
+    addHallB.className='btn mini';
+    addHallB.textContent='🏛️🎉 + Банкет для всего зала';
+    addHallB.onclick=()=>openBanquetModal(null, {hallWide:h.id});
+    tools.appendChild(addHallB);
+
+    // чипы уже привязанных
+    const ex=getHallExtra(h.id);
+    (ex.hallBanquets||[]).forEach(bid=>{
+      const b=banquetById(bid); if(!b) return;
+      const pill=document.createElement('span'); pill.className='hall-pill';
+      const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
+      pill.innerHTML=`<span class="tag">ВЕСЬ ЗАЛ</span> ${title} · ${b.people}`;
+      const x=document.createElement('button'); x.className='x'; x.textContent='×';
+      x.onclick=()=>{ removeHallBanquet(h.id,bid); renderColumns(); };
+      pill.appendChild(x);
+      tools.appendChild(pill);
+    });
+  }
+
+  // 2) Общий официант для ВИП-комнат
+  if(h.name==='ВИП-комнаты'){
+    const ex=getHallExtra(h.id);
+    const wrap=document.createElement('div'); wrap.className='hall-pill';
+    const sel=document.createElement('select');
+    sel.innerHTML='<option value="">— общий официант ВИП —</option>';
+    db.waiters.forEach(w=>{ const o=document.createElement('option'); o.value=w.id; o.textContent=w.name; sel.appendChild(o); });
+    const btnSet=document.createElement('button'); btnSet.className='btn mini'; btnSet.textContent='Установить';
+    btnSet.onclick=()=>{ if(sel.value){ setSharedWaiter(h.id, sel.value); renderColumns(); renderShiftBadge(); } };
+    const btnClr=document.createElement('button'); btnClr.className='btn mini'; btnClr.textContent='Убрать';
+    btnClr.onclick=()=>{ setSharedWaiter(h.id, null); renderColumns(); renderShiftBadge(); };
+
+    wrap.prepend(document.createTextNode('👑👤 '));
+    wrap.appendChild(sel); wrap.appendChild(btnSet); wrap.appendChild(btnClr);
+    if(ex.sharedWaiter){
+      const w=waiterById(ex.sharedWaiter);
+      const tag=document.createElement('span'); tag.className='tag'; tag.textContent = w? `Общий: ${w.name}` : 'Общий: —';
+      wrap.appendChild(tag);
+    }
+    tools.appendChild(wrap);
+  }
+
+  if(tools.childNodes.length) sec.insertBefore(tools, grid);
+
+  /* позиции */
   h.positions.forEach(p=>{
     const card=posCardTpl.content.firstElementChild.cloneNode(true);
     card.querySelector('.pos-title').textContent=(POS_ICONS[p.name]||'')+' '+p.name;
@@ -428,6 +497,22 @@ function mountHall(h,into){
     const draw=()=>{
       const arr=ensureSlot(h.id,p.id);
       slot.innerHTML='';
+
+      // виртуальный общий официант для ВИПов
+      if(h.name==='ВИП-комнаты'){
+        const sw=getHallExtra(h.id).sharedWaiter;
+        if(sw){
+          const w=waiterById(sw); if(w){
+            const {bg,fg}=colorForWaiter(sw);
+            const el=renderAssign(w.name, getNotes(sw), bg, fg, null /* без удаления из позиции */);
+            // без крестика:
+            el.querySelector('.x')?.remove();
+            slot.appendChild(el);
+          }
+        }
+      }
+
+      // реальные назначения
       arr.forEach(ent=>{
         if(ent.k==='w'){
           const w=waiterById(ent.id); if(!w) return;
@@ -436,13 +521,18 @@ function mountHall(h,into){
           slot.appendChild(el);
         }else{
           const b=banquetById(ent.id); if(!b) return;
-          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUЕТ_TYPES[b.type]||'Банкет');
+          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
           const label=`${title} · ${b.people}`;
           const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
           slot.appendChild(el);
         }
       });
-      counter.textContent=String(arr.length);
+
+      // счётчик: уникальные официанты + учёт общего для ВИПов
+      const ids=new Set(arr.filter(e=>e.k==='w').map(e=>e.id));
+      if(h.name==='ВИП-комнаты' && getHallExtra(h.id).sharedWaiter) ids.add(getHallExtra(h.id).sharedWaiter);
+      counter.textContent=String(ids.size);
+
       refreshHallBrief(h.id); renderShiftBadge();
     };
 
@@ -486,6 +576,24 @@ function refreshHallBrief(hid){
   const hall=db.halls.find(x=>x.id===hid); if(!hall){ briefEl.textContent=''; briefEl.classList.remove('has'); return; }
   const ass=dayAss();
   const parts=[], countsByPos=[];
+  const ex=getHallExtra(hid);
+
+  // hall-wide banquets (для Основного зала)
+  if(ex.hallBanquets && ex.hallBanquets.length){
+    const list = ex.hallBanquets.map(bid=>{
+      const b=banquetById(bid); if(!b) return null;
+      const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
+      return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
+    }).filter(Boolean);
+    if(list.length) parts.push(`Банкет (весь зал): ${list.join(' | ')}`);
+  }
+
+  // shared waiter (ВИП)
+  if(ex.sharedWaiter){
+    const w=waiterById(ex.sharedWaiter);
+    if(w && hall.name==='ВИП-комнаты') parts.push(`Общий: ${w.name}`);
+  }
+
   (hall.positions||[]).forEach(p=>{
     const arr=(ass[hid]&&ass[hid][p.id])||[];
     if(!arr.length) return;
@@ -501,8 +609,11 @@ function refreshHallBrief(hid){
     });
     parts.push(`${p.name}: ${people.join(', ')}`);
     const uniq = new Set(arr.filter(e=>e.k==='w').map(e=>e.id));
+    // учесть общего официанта
+    if(hall.name==='ВИП-комнаты' && getHallExtra(hid).sharedWaiter) uniq.add(getHallExtra(hid).sharedWaiter);
     countsByPos.push(`${uniq.size} на ${p.name}`);
   });
+
   const has=parts.length>0;
   briefEl.textContent = has ? parts.join(' • ') : '';
   briefEl.classList.toggle('has', has);
@@ -514,6 +625,8 @@ function refreshHallBrief(hid){
       const arr=(ass[hid]&&ass[hid][p.id])||[];
       arr.filter(e=>e.k==='w').forEach(e=>all.push(e.id));
     });
+    // учесть общего официанта
+    if(hall.name==='ВИП-комнаты' && getHallExtra(hid).sharedWaiter) all.push(getHallExtra(hid).sharedWaiter);
     const uniq = new Set(all);
     totalEl.textContent = uniq.size ? (countsByPos.join(', ') + ` — Всего: ${uniq.size}`) : '';
   }
@@ -528,7 +641,7 @@ function renderAssign(name, notesArr, bg, fg, onRemove){
   const top=document.createElement('div'); top.className='top';
   const nm=document.createElement('div'); nm.className='w-name'; nm.textContent=name;
   const x=document.createElement('button'); x.className='x'; x.title='Убрать'; x.textContent='×';
-  x.onclick=(e)=>{ e.stopPropagation(); onRemove(); };
+  if(onRemove){ x.onclick=(e)=>{ e.stopPropagation(); onRemove(); }; } else { x.remove(); }
   top.appendChild(nm); top.appendChild(x);
   const note=document.createElement('div'); note.className='w-note';
   note.textContent = (notesArr && notesArr.length) ? notesArr.join(', ') : '';
@@ -572,9 +685,10 @@ function openCommentsModal(wid, wname){
   redraw();
 }
 
-/* ====== банкет: модалка с выбором места ====== */
-function openBanquetModal(existing){
+/* ====== банкет: модалка с выбором места и hall-wide ====== */
+function openBanquetModal(existing, opts){
   const isEdit=!!existing;
+  const hallWideId = opts && opts.hallWide ? String(opts.hallWide) : null;
   const wrap=document.createElement('div'); wrap.className='modal';
 
   const placeOptions = db.halls.map(h=>{
@@ -589,6 +703,7 @@ function openBanquetModal(existing){
     '<div class="row" id="bnOtherRow" style="display:none"><label>Другой</label><input id="bnOther"/></div>'+
     '<div class="row"><label>Комментарий</label><textarea id="bnNote" rows="3" placeholder="Пожелания, тайминг..."></textarea></div>'+
     `<div class="row"><label>Место</label><select id="bnPlace"><option value="">— не выбирать —</option>${placeOptions}</select></div>`+
+    (hallWideId? '<div class="weak" style="margin-top:-4px">Назначение: <b>весь Основной зал</b></div>' : '')+
     `<div class="row" style="justify-content:flex-end"><button id="bnSave" class="btn btn-acc">${isEdit?'Сохранить':'Добавить'}</button><button id="bnClose">Закрыть</button></div>`+
   '</div>';
 
@@ -615,13 +730,20 @@ function openBanquetModal(existing){
       banquetsForDay().push(b);
     }
 
+    // если назначен hall-wide (весь Основной зал)
+    if(hallWideId){ addHallBanquet(hallWideId, b.id); }
+
+    // если выбрано конкретное место — добавляем в нужную позицию (и банкет при этом остаётся в верхней панели)
     if(place.value){
-      const [hid,pid]=place.value.split('|');
+      const [hid,pid]=String(place.value).split('|');
       const arr=ensureSlot(hid,pid);
       if(!arr.some(x=>x.k==='b'&&x.id===b.id)){ arr.push({k:'b',id:b.id}); }
     }
 
-    save(); renderAll(); wrap.remove();
+    save();
+    // Рендерим аккуратно, чтобы ничего «не пропадало»
+    try { renderAll(); } catch(e){ console.error('renderAll error:',e); renderColumns(); }
+    wrap.remove();
   };
   wrap.querySelector('#bnClose').onclick=()=>wrap.remove();
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
@@ -634,7 +756,7 @@ function fillPick(selectEl){
 }
 function renderShiftAndTotals(){ updateAllHallTotals(); renderShiftBadge(); }
 
-/* ====== экспорт отчёта (WA/TG/Email общий текст) ====== */
+/* ====== экспорт отчёта ====== */
 function exportTextWhatsApp(){
   const iso = dateKey();
   const n = uniqueWaitersAll().size;
@@ -657,24 +779,54 @@ function exportTextWhatsApp(){
 
   const ass=dayAss();
   db.halls.forEach(h=>{
-    const hasAny=(h.positions||[]).some(p=> (ass[h.id]&&ass[h.id][p.id]||[]).length>0 );
-    if(!hasAny) return;
+    // проверим, есть ли что выводить
+    const ex=getHallExtra(h.id);
+    const hasHallWide = ex.hallBanquets && ex.hallBanquets.length>0;
+    const hasShared = !!ex.sharedWaiter && h.name==='ВИП-комнаты';
+    const hasAnyPos = (h.positions||[]).some(p=> (ass[h.id]&&ass[h.id][p.id]||[]).length>0 );
+    if(!hasHallWide && !hasShared && !hasAnyPos) return;
+
     lines.push(`${(HALL_ICONS[h.name]||'')} *${h.name}*:`);
 
+    // hall-wide банкет для Основного зала
+    if(hasHallWide && h.name==='Основной зал'){
+      const text = ex.hallBanquets.map(bid=>{
+        const x=banquetById(bid); if(!x) return null;
+        const title=(x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
+        return `${title} · ${x.people}` + (x.note?` (${x.note})`:'');
+      }).filter(Boolean).join(' | ');
+      if(text) lines.push(`• Банкет (весь зал): ${text}`);
+    }
+
+    // общий официант для ВИПов
+    if(hasShared){
+      const w=waiterById(ex.sharedWaiter);
+      if(w) lines.push(`• Общий официант: ${w.name}`);
+    }
+
+    // позиции
     h.positions.forEach(p=>{
       const arr=(ass[h.id]&&ass[h.id][p.id])||[];
-      if(!arr.length) return;
-      const people=arr.map(e=>{
+      if(!arr.length && !(hasShared && h.name==='ВИП-комнаты')) return; // пусто и нет общего
+      const list=[];
+      if(hasShared && h.name==='ВИП-комнаты'){
+        const w=waiterById(ex.sharedWaiter);
+        if(w){
+          const cm=getNotes(w.id);
+          list.push(cm.length? `${w.name} _(${cm.join(', ')})_` : w.name);
+        }
+      }
+      arr.forEach(e=>{
         if(e.k==='w'){
           const w=waiterById(e.id); const cm=getNotes(e.id);
-          return w ? (cm.length? `${w.name} _(${cm.join(', ')})_` : w.name) : '—';
+          list.push(w ? (cm.length? `${w.name} _(${cm.join(', ')})_` : w.name) : '—');
         }else{
-          const x=banquetById(e.id); if(!x) return 'Банкет';
+          const x=banquetById(e.id); if(!x) return;
           const title=(x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
-          return x.note ? `${title} · ${x.people} _(${x.note})_` : `${title} · ${x.people}`;
+          list.push(x.note ? `${title} · ${x.people} _(${x.note})_` : `${title} · ${x.people}`);
         }
-      }).join(' | ');
-      lines.push(`• ${(POS_ICONS[p.name]||'')} ${p.name}: ${people}`);
+      });
+      if(list.length) lines.push(`• ${(POS_ICONS[p.name]||'')} ${p.name}: ${list.join(' | ')}`);
     });
     lines.push('');
   });
@@ -701,7 +853,6 @@ function importDB(file){
   reader.onload = ()=>{
     try{
       const obj=JSON.parse(reader.result);
-      // минимальная проверка структуры
       if(!obj || !obj.halls || !obj.waiters || !obj.assignments) throw new Error('Неверный формат файла');
       pushHistory();
       db = obj;
@@ -722,6 +873,7 @@ function resetCurrentDate(){
   db.notes[k]={};
   db.banquets[k]=[];
   delete db.shiftSize[k];
+  if(db.hallExtras[k]) delete db.hallExtras[k];
   save();
 }
 
@@ -780,7 +932,7 @@ function renderAll(){
   renderColumns();
 }
 
-/* ====== PWA: регистрация SW и кнопка установки ====== */
+/* ====== PWA ====== */
 let deferredPrompt=null;
 function registerSW(){
   if('serviceWorker' in navigator){
@@ -800,8 +952,7 @@ function installApp(){
 
 /* ====== init ====== */
 document.addEventListener('DOMContentLoaded', function(){
-  showOK();
-  registerSW();
+  showOK(); registerSW();
 
   const dateEl=document.getElementById('date');
   dateEl.value = dateEl.value || todayISO();
@@ -817,7 +968,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('toggleSecondary').textContent=open?'2-я смена ↑':'2-я смена ↓';
   });
 
-  // Добавить официанта (с выбором смены)
+  // добавить официанта
   document.getElementById('addWaiter').addEventListener('click',()=>{
     const wrap=document.createElement('div'); wrap.className='modal';
     wrap.innerHTML='<div class="dialog">'+
@@ -832,7 +983,8 @@ document.addEventListener('DOMContentLoaded', function(){
       const name=(input.value||'').trim(); if(!name) return;
       if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже существует.');
       pushHistory();
-      db.waiters.push({id:UUID(), name});
+      const w={id:UUID(), name};
+      db.waiters.push(w);
       if(sel.value==='2'){
         db.metaShifts.secondary.push(name);
         db.metaShifts.primary = db.metaShifts.primary.filter(n=>n!==name);
