@@ -27,7 +27,7 @@
   .center{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
   .b-chip{border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:#fff;display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:12px;cursor:pointer}
   .b-chip.active{outline:2px solid rgba(99,102,241,.25)}
-  .b-actions{display:inline-flex;gap:4px}
+  .b-actions{display:inline-flex;gap:4px;margin-left:6px}
   .icon-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:2px 5px;font-size:11px}
   .waiters{display:grid;gap:6px}
   .w-section{display:flex;align-items:center;gap:6px}
@@ -150,7 +150,6 @@
         <span class="hall-total"></span>
         <span class="hall-brief"></span>
       </summary>
-      <!-- сюда подрисуем .hall-tools при необходимости -->
       <div class="pos-grid"></div>
     </details>
   </template>
@@ -183,7 +182,7 @@ function showOK(){ var el=document.getElementById('okbar'); if(el) el.style.disp
 
 /* ====== данные ====== */
 const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v12';
+const STORAGE_KEY='rota-compact-v13'; /* повысил ключ для «чистого» обновления кода */
 const MAX_AGE_DAYS=60;
 const HISTORY_LIMIT=100;
 
@@ -214,6 +213,17 @@ function weekdayRU(iso){ const d=new Date(iso+'T00:00'); const w=['вс','пн',
 function fmtDateRU(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y} (${weekdayRU(iso)})`; }
 function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+/* ====== защита названий банкета ====== */
+function safeBanquetTitle(b){
+  if(!b || !b.type){ return 'Банкет'; }
+  if(b.type === 'Другой'){
+    const t = (b.other || '').trim();
+    return t ? `Другое: ${t}` : 'Другое';
+  }
+  const t = BANQUET_TYPES[b.type];
+  return t || 'Банкет';
+}
 
 /* ====== история (Undo/Redo) ====== */
 const history={undo:[], redo:[]};
@@ -284,7 +294,6 @@ function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
 function uniqueWaitersAll(){
   const ass=dayAss(); const ids=new Set();
   for(const hid in ass){ for(const pid in ass[hid]){ (ass[hid][pid]||[]).forEach(e=>{ if(e.k==='w') ids.add(e.id); }); } }
-  // общий официант ВИПов
   const extras = hallExtrasForDay();
   for(const hid in extras){ const ex = extras[hid]; if(ex && ex.sharedWaiter) ids.add(ex.sharedWaiter); }
   return ids;
@@ -377,29 +386,53 @@ function renderBanquetBar(){
   const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
   addBtn.onclick=()=>openBanquetModal(); bar.appendChild(addBtn);
 
-  banquetsForDay().forEach(b=>{
-    const meta=BANQUET_TYPES[b.type]||BANQUET_TYPES['Другой'];
+  const arr = banquetsForDay();
+  arr.forEach(b=>{
     const chip=document.createElement('div'); chip.className='b-chip';
     if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
-    const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:meta;
-    chip.textContent=`${title} · ${b.people}`;
+    chip.appendChild(document.createTextNode(`${safeBanquetTitle(b)} · ${b.people}`));
+
     const actions=document.createElement('span'); actions.className='b-actions';
     const edit=document.createElement('button'); edit.className='icon-btn'; edit.textContent='✏️';
     const del=document.createElement('button'); del.className='icon-btn'; del.textContent='🗑';
     edit.onclick=(e)=>{e.stopPropagation(); openBanquetModal(b);};
     del.onclick=(e)=>{e.stopPropagation(); deleteBanquet(b.id);};
-    chip.appendChild(actions); actions.appendChild(edit); actions.appendChild(del);
-    chip.addEventListener('click',()=>{ selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id}; renderBanquetBar(); },{passive:true});
+
+    actions.appendChild(edit); actions.appendChild(del);
+    chip.appendChild(actions);
+
+    chip.addEventListener('click',()=>{
+      selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id};
+      renderBanquetBar();
+    },{passive:true});
+
     bar.appendChild(chip);
   });
 }
 function deleteBanquet(id){
   pushHistory();
-  const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
-  const ass=dayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
-  const extras=hallExtrasForDay(); for(const hid in extras){ if(extras[hid]) extras[hid].hallBanquets = (extras[hid].hallBanquets||[]).filter(bid=>bid!==id); }
+  const arr=banquetsForDay();
+  const i=arr.findIndex(x=>x.id===id);
+  if(i>-1) arr.splice(i,1);
+
+  const ass=dayAss();
+  for(const hid in ass){
+    for(const pid in ass[hid]){
+      ass[hid][pid] = (ass[hid][pid]||[]).filter(x=>!(x.k==='b' && x.id===id));
+    }
+  }
+  const extras=hallExtrasForDay();
+  for(const hid in extras){
+    if(extras[hid]){
+      extras[hid].hallBanquets = (extras[hid].hallBanquets||[]).filter(bid=>bid!==id);
+    }
+  }
+
   if(selected && selected.k==='b' && selected.id===id) selected=null;
-  save(); renderAll(); /* важное изменение: обновляем и верхние чипы */
+
+  save();
+  renderAll();
+  requestAnimationFrame(()=>renderAll());
 }
 
 /* ====== колонки ====== */
@@ -439,10 +472,10 @@ function mountHall(h,into){
     (ex.hallBanquets||[]).forEach(bid=>{
       const b=banquetById(bid); if(!b) return;
       const pill=document.createElement('span'); pill.className='hall-pill';
-      const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
+      const title=safeBanquetTitle(b);
       pill.innerHTML=`<span class="tag">ВЕСЬ ЗАЛ</span> ${title} · ${b.people}`;
       const x=document.createElement('button'); x.className='x'; x.textContent='×';
-      x.onclick=()=>{ removeHallBanquet(h.id,bid); renderAll(); /* важно: чтобы чип вверху тоже обновился */ };
+      x.onclick=()=>{ removeHallBanquet(h.id,bid); save(); renderAll(); requestAnimationFrame(()=>renderAll()); };
       pill.appendChild(x);
       tools.appendChild(pill);
     });
@@ -504,7 +537,7 @@ function mountHall(h,into){
           slot.appendChild(el);
         }else{
           const b=banquetById(ent.id); if(!b) return;
-          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет'); /* FIX */
+          const title=safeBanquetTitle(b);
           const label=`${title} · ${b.people}`;
           const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
           slot.appendChild(el);
@@ -563,7 +596,7 @@ function refreshHallBrief(hid){
   if(ex.hallBanquets && ex.hallBanquets.length){
     const list = ex.hallBanquets.map(bid=>{
       const b=banquetById(bid); if(!b) return null;
-      const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
+      const title=safeBanquetTitle(b);
       return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
     }).filter(Boolean);
     if(list.length) parts.push(`Банкет (весь зал): ${list.join(' | ')}`);
@@ -583,7 +616,7 @@ function refreshHallBrief(hid){
         const cm=getNotes(e.id); return w.name + (cm.length? ` (${cm.join(', ')})` : '');
       }else{
         const b=banquetById(e.id); if(!b) return 'Банкет';
-        const title=(b.type==='Другой'&&b.other)?('Другое: '+b.other):(BANQUET_TYPES[b.type]||'Банкет');
+        const title=safeBanquetTitle(b);
         return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
       }
     });
@@ -619,7 +652,7 @@ function renderAssign(name, notesArr, bg, fg, onRemove){
   const top=document.createElement('div'); top.className='top';
   const nm=document.createElement('div'); nm.className='w-name'; nm.textContent=name;
   const x=document.createElement('button'); x.className='x'; x.title='Убрать'; x.textContent='×';
-  if(onRemove){ x.onclick=(e)=>{ e.stopPropagation(); onRemove(); }; } else { x.remove(); }
+  if(onRemove){ x.onclick=(e)=>{ e.stopPropagation(); onRemove(); renderShiftBadge(); }; } else { x.remove(); }
   top.appendChild(nm); top.appendChild(x);
   const note=document.createElement('div'); note.className='w-note';
   note.textContent = (notesArr && notesArr.length) ? notesArr.join(', ') : '';
@@ -717,7 +750,9 @@ function openBanquetModal(existing, opts){
     }
 
     save();
-    try { renderAll(); } catch(e){ console.error('renderAll error:',e); renderColumns(); }
+    selected=null;
+    renderAll();
+    requestAnimationFrame(()=>renderAll());
     wrap.remove();
   };
   wrap.querySelector('#bnClose').onclick=()=>wrap.remove();
@@ -746,7 +781,7 @@ function exportTextWhatsApp(){
     lines.push('Банкеты: 0', '');
   }else{
     const list = b.map(x=>{
-      const title = (x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
+      const title = safeBanquetTitle(x);
       return `${title} · ${x.people}` + (x.note?` (${x.note})`:'');
     }).join(' | ');
     lines.push('Банкеты: '+list, '');
@@ -765,7 +800,7 @@ function exportTextWhatsApp(){
     if(hasHallWide && h.name==='Основной зал'){
       const text = ex.hallBanquets.map(bid=>{
         const x=banquetById(bid); if(!x) return null;
-        const title=(x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
+        const title=safeBanquetTitle(x);
         return `${title} · ${x.people}` + (x.note?` (${x.note})`:'');
       }).filter(Boolean).join(' | ');
       if(text) lines.push(`• Банкет (весь зал): ${text}`);
@@ -793,7 +828,7 @@ function exportTextWhatsApp(){
           list.push(w ? (cm.length? `${w.name} _(${cm.join(', ')})_` : w.name) : '—');
         }else{
           const x=banquetById(e.id); if(!x) return;
-          const title=(x.type==='Другой'&&x.other)?('Другое: '+x.other):(BANQUET_TYPES[x.type]||'Банкет');
+          const title=safeBanquetTitle(x);
           list.push(x.note ? `${title} · ${x.people} _(${x.note})_` : `${title} · ${x.people}`);
         }
       });
