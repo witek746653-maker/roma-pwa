@@ -284,12 +284,9 @@ function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
 function uniqueWaitersAll(){
   const ass=dayAss(); const ids=new Set();
   for(const hid in ass){ for(const pid in ass[hid]){ (ass[hid][pid]||[]).forEach(e=>{ if(e.k==='w') ids.add(e.id); }); } }
-  // учтём «общего официанта» ВИПов
+  // общий официант ВИПов
   const extras = hallExtrasForDay();
-  for(const hid in extras){
-    const ex = extras[hid];
-    if(ex && ex.sharedWaiter) ids.add(ex.sharedWaiter);
-  }
+  for(const hid in extras){ const ex = extras[hid]; if(ex && ex.sharedWaiter) ids.add(ex.sharedWaiter); }
   return ids;
 }
 
@@ -346,13 +343,10 @@ function renderWaiterChip(w, isSecondary=false){
     db.waiters=db.waiters.filter(x=>x.id!==w.id);
     db.metaShifts.primary=db.metaShifts.primary.filter(n=>n!==w.name);
     db.metaShifts.secondary=db.metaShifts.secondary.filter(n=>n!==w.name);
-
-    // убираем из sharedWaiter если назначен
     for(const day in db.hallExtras){
       const m=db.hallExtras[day]||{};
       for(const hid in m){ if(m[hid] && m[hid].sharedWaiter===w.id) m[hid].sharedWaiter=null; }
     }
-
     if(selected && selected.k==='w' && selected.id===w.id) selected=null;
     save(); renderAll();
   });
@@ -402,18 +396,15 @@ function renderBanquetBar(){
 function deleteBanquet(id){
   pushHistory();
   const arr=banquetsForDay(); const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1);
-  // удалить в позициях
   const ass=dayAss(); for(const hid in ass){ for(const pid in ass[hid]){ ass[hid][pid]=(ass[hid][pid]||[]).filter(x=>!(x.k==='b'&&x.id===id)); } }
-  // удалить из hall-wide
   const extras=hallExtrasForDay(); for(const hid in extras){ if(extras[hid]) extras[hid].hallBanquets = (extras[hid].hallBanquets||[]).filter(bid=>bid!==id); }
   if(selected && selected.k==='b' && selected.id===id) selected=null;
-  save(); renderColumns();
+  save(); renderAll(); /* важное изменение: обновляем и верхние чипы */
 }
 
 /* ====== колонки ====== */
 const hallBriefEls=new Map(), hallTotalEls=new Map();
 function renderColumns(){
-  // оборачиваем в try/catch на каждый раздел — чтобы ошибка не «съедала» правую колонку
   const c1=$('#col1'), c2=$('#col2'), c3=$('#col3');
   c1.innerHTML=''; c2.innerHTML=''; c3.innerHTML='';
   hallBriefEls.clear(); hallTotalEls.clear();
@@ -435,10 +426,8 @@ function mountHall(h,into){
   const briefEl=sec.querySelector('.hall-brief'); hallBriefEls.set(h.id, briefEl);
   const grid=sec.querySelector('.pos-grid');
 
-  /* tools-панель над сеткой */
   const tools=document.createElement('div'); tools.className='hall-tools';
 
-  // 1) Банкет для всего Основного зала
   if(h.name==='Основной зал'){
     const addHallB=document.createElement('button');
     addHallB.className='btn mini';
@@ -446,7 +435,6 @@ function mountHall(h,into){
     addHallB.onclick=()=>openBanquetModal(null, {hallWide:h.id});
     tools.appendChild(addHallB);
 
-    // чипы уже привязанных
     const ex=getHallExtra(h.id);
     (ex.hallBanquets||[]).forEach(bid=>{
       const b=banquetById(bid); if(!b) return;
@@ -454,13 +442,12 @@ function mountHall(h,into){
       const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
       pill.innerHTML=`<span class="tag">ВЕСЬ ЗАЛ</span> ${title} · ${b.people}`;
       const x=document.createElement('button'); x.className='x'; x.textContent='×';
-      x.onclick=()=>{ removeHallBanquet(h.id,bid); renderColumns(); };
+      x.onclick=()=>{ removeHallBanquet(h.id,bid); renderAll(); /* важно: чтобы чип вверху тоже обновился */ };
       pill.appendChild(x);
       tools.appendChild(pill);
     });
   }
 
-  // 2) Общий официант для ВИП-комнат
   if(h.name==='ВИП-комнаты'){
     const ex=getHallExtra(h.id);
     const wrap=document.createElement('div'); wrap.className='hall-pill';
@@ -484,7 +471,6 @@ function mountHall(h,into){
 
   if(tools.childNodes.length) sec.insertBefore(tools, grid);
 
-  /* позиции */
   h.positions.forEach(p=>{
     const card=posCardTpl.content.firstElementChild.cloneNode(true);
     card.querySelector('.pos-title').textContent=(POS_ICONS[p.name]||'')+' '+p.name;
@@ -498,21 +484,18 @@ function mountHall(h,into){
       const arr=ensureSlot(h.id,p.id);
       slot.innerHTML='';
 
-      // виртуальный общий официант для ВИПов
       if(h.name==='ВИП-комнаты'){
         const sw=getHallExtra(h.id).sharedWaiter;
         if(sw){
           const w=waiterById(sw); if(w){
             const {bg,fg}=colorForWaiter(sw);
-            const el=renderAssign(w.name, getNotes(sw), bg, fg, null /* без удаления из позиции */);
-            // без крестика:
+            const el=renderAssign(w.name, getNotes(sw), bg, fg, null);
             el.querySelector('.x')?.remove();
             slot.appendChild(el);
           }
         }
       }
 
-      // реальные назначения
       arr.forEach(ent=>{
         if(ent.k==='w'){
           const w=waiterById(ent.id); if(!w) return;
@@ -521,14 +504,13 @@ function mountHall(h,into){
           slot.appendChild(el);
         }else{
           const b=banquetById(ent.id); if(!b) return;
-          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет');
+          const title=(b.type==='Другой'&&b.other)?`Другое: ${b.other}`:(BANQUET_TYPES[b.type]||'Банкет'); /* FIX */
           const label=`${title} · ${b.people}`;
           const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
           slot.appendChild(el);
         }
       });
 
-      // счётчик: уникальные официанты + учёт общего для ВИПов
       const ids=new Set(arr.filter(e=>e.k==='w').map(e=>e.id));
       if(h.name==='ВИП-комнаты' && getHallExtra(h.id).sharedWaiter) ids.add(getHallExtra(h.id).sharedWaiter);
       counter.textContent=String(ids.size);
@@ -578,7 +560,6 @@ function refreshHallBrief(hid){
   const parts=[], countsByPos=[];
   const ex=getHallExtra(hid);
 
-  // hall-wide banquets (для Основного зала)
   if(ex.hallBanquets && ex.hallBanquets.length){
     const list = ex.hallBanquets.map(bid=>{
       const b=banquetById(bid); if(!b) return null;
@@ -588,7 +569,6 @@ function refreshHallBrief(hid){
     if(list.length) parts.push(`Банкет (весь зал): ${list.join(' | ')}`);
   }
 
-  // shared waiter (ВИП)
   if(ex.sharedWaiter){
     const w=waiterById(ex.sharedWaiter);
     if(w && hall.name==='ВИП-комнаты') parts.push(`Общий: ${w.name}`);
@@ -609,7 +589,6 @@ function refreshHallBrief(hid){
     });
     parts.push(`${p.name}: ${people.join(', ')}`);
     const uniq = new Set(arr.filter(e=>e.k==='w').map(e=>e.id));
-    // учесть общего официанта
     if(hall.name==='ВИП-комнаты' && getHallExtra(hid).sharedWaiter) uniq.add(getHallExtra(hid).sharedWaiter);
     countsByPos.push(`${uniq.size} на ${p.name}`);
   });
@@ -625,7 +604,6 @@ function refreshHallBrief(hid){
       const arr=(ass[hid]&&ass[hid][p.id])||[];
       arr.filter(e=>e.k==='w').forEach(e=>all.push(e.id));
     });
-    // учесть общего официанта
     if(hall.name==='ВИП-комнаты' && getHallExtra(hid).sharedWaiter) all.push(getHallExtra(hid).sharedWaiter);
     const uniq = new Set(all);
     totalEl.textContent = uniq.size ? (countsByPos.join(', ') + ` — Всего: ${uniq.size}`) : '';
@@ -730,10 +708,8 @@ function openBanquetModal(existing, opts){
       banquetsForDay().push(b);
     }
 
-    // если назначен hall-wide (весь Основной зал)
     if(hallWideId){ addHallBanquet(hallWideId, b.id); }
 
-    // если выбрано конкретное место — добавляем в нужную позицию (и банкет при этом остаётся в верхней панели)
     if(place.value){
       const [hid,pid]=String(place.value).split('|');
       const arr=ensureSlot(hid,pid);
@@ -741,7 +717,6 @@ function openBanquetModal(existing, opts){
     }
 
     save();
-    // Рендерим аккуратно, чтобы ничего «не пропадало»
     try { renderAll(); } catch(e){ console.error('renderAll error:',e); renderColumns(); }
     wrap.remove();
   };
@@ -779,7 +754,6 @@ function exportTextWhatsApp(){
 
   const ass=dayAss();
   db.halls.forEach(h=>{
-    // проверим, есть ли что выводить
     const ex=getHallExtra(h.id);
     const hasHallWide = ex.hallBanquets && ex.hallBanquets.length>0;
     const hasShared = !!ex.sharedWaiter && h.name==='ВИП-комнаты';
@@ -788,7 +762,6 @@ function exportTextWhatsApp(){
 
     lines.push(`${(HALL_ICONS[h.name]||'')} *${h.name}*:`);
 
-    // hall-wide банкет для Основного зала
     if(hasHallWide && h.name==='Основной зал'){
       const text = ex.hallBanquets.map(bid=>{
         const x=banquetById(bid); if(!x) return null;
@@ -798,16 +771,14 @@ function exportTextWhatsApp(){
       if(text) lines.push(`• Банкет (весь зал): ${text}`);
     }
 
-    // общий официант для ВИПов
     if(hasShared){
       const w=waiterById(ex.sharedWaiter);
       if(w) lines.push(`• Общий официант: ${w.name}`);
     }
 
-    // позиции
     h.positions.forEach(p=>{
       const arr=(ass[h.id]&&ass[h.id][p.id])||[];
-      if(!arr.length && !(hasShared && h.name==='ВИП-комнаты')) return; // пусто и нет общего
+      if(!arr.length && !(hasShared && h.name==='ВИП-комнаты')) return;
       const list=[];
       if(hasShared && h.name==='ВИП-комнаты'){
         const w=waiterById(ex.sharedWaiter);
@@ -968,7 +939,6 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('toggleSecondary').textContent=open?'2-я смена ↑':'2-я смена ↓';
   });
 
-  // добавить официанта
   document.getElementById('addWaiter').addEventListener('click',()=>{
     const wrap=document.createElement('div'); wrap.className='modal';
     wrap.innerHTML='<div class="dialog">'+
@@ -999,11 +969,9 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(()=>input.focus(),0);
   });
 
-  // Undo/Redo
   document.getElementById('undoBtn').addEventListener('click', undo);
   document.getElementById('redoBtn').addEventListener('click', redo);
 
-  // Экспорт/Импорт
   document.getElementById('exportBtn').addEventListener('click', exportDB);
   document.getElementById('importBtn').addEventListener('click', ()=> $('#importFile').click() );
   document.getElementById('importFile').addEventListener('change', (e)=>{
@@ -1012,7 +980,6 @@ document.addEventListener('DOMContentLoaded', function(){
     e.target.value='';
   });
 
-  // копировать и шаринг
   document.getElementById('copy').addEventListener('click', async ()=>{
     const txt=exportTextWhatsApp(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
   });
@@ -1035,16 +1002,13 @@ document.addEventListener('DOMContentLoaded', function(){
     window.location.href = url;
   });
 
-  // очистить день
   document.getElementById('resetDay').addEventListener('click',()=>{
     if(!confirm('Очистить все данные на выбранную дату?')) return;
     resetCurrentDate(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
   });
 
-  // статистика
   document.getElementById('statsBtn').addEventListener('click', openStatsModal);
 
-  // установка PWA
   document.getElementById('installBtn').addEventListener('click', installApp);
 });
 })();
