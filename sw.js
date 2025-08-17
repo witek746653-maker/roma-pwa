@@ -1,10 +1,11 @@
 // Простой cache-first сервис-воркер для офлайна
-const CACHE_NAME = 'rota-cache-v1';
+const CACHE = 'rota-v3'; // было rota-v1
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json'
-  // сюда добавь 'icon-192.png', 'icon-512.png', если добавишь иконки
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {
