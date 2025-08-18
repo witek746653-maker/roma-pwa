@@ -1,1050 +1,424 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Распределение официантов — мобильная версия</title>
-
-<link rel="icon" href="favicon.png" type="image/png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
-
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>Распределение — мобильная</title>
 <style>
-  :root{ --bg:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --panel:#f8fafc; --badge:#fde047; --badgeText:#1f2937 }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:12px/1.25 system-ui,-apple-system,Segoe UI,Roboto}
-  .okbar{display:none;position:sticky;top:0;z-index:20;background:#ecfdf5;color:#065f46;border-bottom:1px solid #a7f3d0;padding:6px 10px;font-weight:700}
-  .header{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:1fr;gap:6px;padding:6px;border-bottom:1px solid var(--border);background:#fff}
-  .bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  label{font-size:10px;color:var(--muted)}
-  .field{display:flex;gap:4px;flex-direction:column}
-  input[type="date"],button{border:1px solid var(--border);background:#fff;border-radius:8px;min-height:28px;padding:4px 8px;font-size:12px}
-  button{cursor:pointer}
-  .btn{border:1px solid var(--border)}
-  .btn-acc{border-color:#c7d2fe}
-  .btn-danger{border-color:#fecaca}
-  .badge{display:inline-flex;margin-top:2px;align-self:flex-start;background:var(--badge);color:var(--badgeText);border-radius:999px;padding:3px 8px;font-weight:700;font-size:11px;cursor:pointer}
-  .center{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
-  .b-chip{border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:#fff;display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:12px;cursor:pointer}
-  .b-chip.active{outline:2px solid rgba(99,102,241,.25)}
-  .b-actions{display:inline-flex;gap:4px;margin-left:6px}
-  .icon-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:2px 5px;font-size:11px}
-  .waiters{display:grid;gap:6px}
-  .w-section{display:flex;align-items:center;gap:6px}
-  .w-title{font-weight:800;color:#475569;font-size:11px}
-  .w-row{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:3px 4px;overflow-x:auto}
-  .more-toggle{border:1px dashed #cbd5e1;border-radius:8px;padding:2px 8px;background:#fff;font-size:11px;cursor:pointer}
-  .chip{border:1px solid #c7d2fe;border-radius:10px;padding:3px 6px;background:#eef2ff;color:#0b1e4a;display:inline-flex;flex-direction:column;gap:2px;min-width:max-content}
-  .chip .top{display:flex;gap:4px;align-items:center}
-  .chip .name{font-weight:800;font-size:11px}
-  .chip .edit{border:1px solid var(--border);border-radius:6px;padding:0 4px;background:#fff;font-size:10px}
-  .chip .del{border:none;background:none;color:#991b1b;font-weight:900;font-size:13px;line-height:1;padding:0 3px}
-  .chip .note{font-size:10px;color:#64748b}
-  .chip.active{outline:2px solid rgba(99,102,241,.25)}
-  .columns{display:grid;gap:6px;padding:6px;grid-template-columns:repeat(3,1fr)}
-  details.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px}
-  summary{list-style:none;display:flex;gap:6px;align-items:flex-start;cursor:pointer}
-  summary::-webkit-details-marker{display:none}
-  .hall-title{font-weight:900;font-size:12px;display:flex;gap:6px;align-items:center}
-  .hall-total{margin-left:auto;color:#334155;font-size:11px;font-weight:800}
-  .hall-brief{margin-left:8px;color:var(--muted);font-size:10px;line-height:1.25;max-width:65%;display:none;white-space:normal}
-  details[open] .hall-brief{display:none}
-  details.panel:not([open]) .hall-brief.has{display:block}
-  .pos-grid{display:grid;gap:6px;margin-top:6px}
-  .pos-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
-  .pos-head{display:flex;gap:6px;align-items:center}
-  .pos-title{font-weight:800;font-size:12px;display:flex;gap:6px;align-items:center}
-  .counter{margin-left:auto;color:#475569;font-size:11px}
-  .slot{display:flex;flex-wrap:wrap;gap:4px;border:1px dashed #e2e8f0;border-radius:8px;padding:6px;min-height:32px}
-  .adder{display:flex;gap:6px;align-items:center}
-  .adder select{border:1px solid var(--border);border-radius:8px;min-height:26px;padding:2px 6px;font-size:12px;max-width:100%}
-  .adder .addBtn{border:1px solid #c7d2fe;background:#eef2ff;border-radius:8px;min-height:26px;padding:2px 8px;font-size:12px;cursor:pointer}
-  .assign{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:#fafafa}
-  .assign .top{display:flex;gap:6px;align-items:center}
-  .assign .w-name{font-weight:800;font-size:12px}
-  .assign .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
-  .assign .w-note{font-size:10px;color:#64748b}
-  .hall-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
-  .hall-pill{border:1px solid #fde68a;background:#fffbeb;border-radius:999px;padding:2px 8px;font-size:11px;display:inline-flex;gap:6px;align-items:center}
-  .hall-pill .tag{background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:1px 4px;font-size:10px;color:#92400e}
-  .hall-pill .x{border:none;background:none;color:#991b1b;font-weight:900;font-size:14px;line-height:1;cursor:pointer;padding:0}
-  .mini{font-size:11px;color:#475569}
-  .weak{color:#64748b}
-  @media (max-width:430px){
-    html,body{font-size:11px}
-    input[type="date"],button{min-height:26px;font-size:11px}
-    .chip .name{font-size:10px}
-    .columns{gap:4px}
-    .pos-card{padding:6px}
-    .slot{padding:4px}
+  :root{
+    --ink:#3b2b2a;--bg:#ffffff;--panel:#fffdfc;--line:#8b5e57;--muted:#7a6662;
+    --accent:#f5e6da;--active:#ffe9c4;--badge:#ffd84d;
   }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.25 system-ui,-apple-system,Segoe UI,Roboto}
+  button,input,select,textarea{font:inherit;color:inherit}
+  .wrap{max-width:980px;margin:0 auto;padding:8px}
+  .box{border:2px solid var(--line);border-radius:6px;background:var(--panel)}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .pad{padding:8px}
+  .topbar{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:8px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .ctrl{border:2px solid var(--line);background:#fff;border-radius:6px;padding:6px 10px}
+  .ctrl.primary{background:var(--accent)}
+  .mini{font-size:12px;padding:4px 8px}
+  .wday{min-width:160px}
+  .grow{flex:1 1 auto}
+
+  .badge{border:2px solid var(--line);background:var(--badge);color:#1f1a0f;
+    border-radius:20px;padding:6px 12px;font-weight:700}
+
+  .halls{display:flex;flex-wrap:wrap;gap:8px}
+  .hall-btn{border:2px solid var(--line);background:#fff;border-radius:6px;padding:10px 12px;cursor:pointer}
+  .hall-btn.active{background:var(--active)}
+
+  .main{display:grid;grid-template-columns:1fr 1.2fr;gap:10px}
+  @media (max-width:760px){ .main{grid-template-columns:1fr} }
+  .left{display:grid;gap:10px}
+
+  .banquets{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .b-chip{border:2px solid var(--line);background:#fff;border-radius:6px;padding:6px 8px;display:inline-flex;align-items:center;gap:6px}
+  .b-chip .x{border:none;background:none;font-weight:900;font-size:16px;line-height:1;cursor:pointer}
+
+  .waiters-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .waiters{border:2px solid var(--line);border-radius:6px;padding:8px;background:#fff}
+  .w-title{font-weight:800}
+  .w-row{display:flex;flex-wrap:wrap;gap:6px}
+
+  .wchip{
+    border:2px solid var(--line);background:#fff;border-radius:8px;min-width:88px;
+    padding:6px 6px 4px; position:relative; display:inline-flex; flex-direction:column;
+    align-items:center; gap:2px; cursor:pointer
+  }
+  .wchip.active{background:var(--active)}
+  .w-main{display:flex;align-items:center;gap:6px}
+  .w-name{font-weight:600}
+  .w-tools{display:flex;gap:4px}
+  .iconbtn{border:1px solid var(--line);background:#fff;border-radius:4px;padding:0 6px;line-height:18px;height:18px;cursor:pointer}
+  .w-note{font-size:11px;color:var(--muted);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .toggle{border:2px solid var(--line);background:#fff;border-radius:6px;padding:6px 8px;cursor:pointer;width:100%;text-align:center;margin-top:6px}
+
+  .count-pill{border:2px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:12px}
+  .right .head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+  .zones{border:2px solid var(--line);border-radius:6px;background:#fff;min-height:320px;padding:8px}
+  .zone{border:2px dashed var(--line);border-radius:6px;padding:8px;margin:8px 0}
+  .zone .zhead{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .zone .slot{display:flex;flex-wrap:wrap;gap:6px}
+  .assign{border:2px solid var(--line);background:var(--accent);border-radius:6px;
+    padding:4px 6px;display:inline-flex;gap:6px;align-items:center;flex-direction:column;min-width:88px}
+  .assign .row1{display:flex;gap:6px;align-items:center}
+  .assign .nm{font-weight:600}
+  .assign .small{font-size:11px;color:var(--muted);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .assign .x{border:none;background:none;font-weight:900;font-size:16px;line-height:1;cursor:pointer}
+
+  .muted{color:var(--muted)}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:10px;z-index:50}
+  .dialog{background:#fff;border:2px solid var(--line);border-radius:8px;max-width:95vw;max-height:95vh;overflow:auto}
+  .dialog .pad{padding:10px}
 </style>
 </head>
 <body>
-  <div id="okbar" class="okbar">✅ JS работает — интерфейс активен</div>
+<div class="wrap">
 
-  <div class="header">
-    <div class="bar">
-      <div class="field">
-        <label for="date">Дата</label>
-        <input id="date" type="date" />
-        <span id="shiftBadge" class="badge" title="Считается автоматически">👥 В смене: —</span>
+  <!-- ВЕРХ -->
+  <div class="topbar box pad">
+    <div class="controls">
+      <div class="ctrl">
+        <div class="muted mini">Календарь</div>
+        <input id="date" type="date"/>
       </div>
 
-      <button id="undoBtn" class="btn" title="Отменить (Undo)">↶ Отменить</button>
-      <button id="redoBtn" class="btn" title="Повторить (Redo)">↷ Повторить</button>
+      <div class="ctrl wday" id="wday">День недели<br/>Число.Месяц.</div>
 
-      <button id="addWaiter" class="btn btn-acc">Добавить официанта</button>
+      <!-- ЕДИНАЯ яркая кнопка с числом людей в смене -->
+      <div id="shiftBadge" class="badge">В смене: 0</div>
 
-      <button id="shareWA" class="btn btn-acc" title="Отправить в WhatsApp">WhatsApp</button>
-      <button id="shareTG" class="btn btn-acc" title="Отправить в Telegram">Telegram</button>
-      <button id="shareMail" class="btn btn-acc" title="Отправить на Email">Email</button>
+      <button class="ctrl" id="sendBtn">Отправить</button>
+      <button class="ctrl" id="resetBtn">Сбросить все</button>
 
-      <button id="copy" class="btn">Копировать</button>
+      <div class="grow"></div>
 
-      <button id="exportBtn" class="btn">Экспорт</button>
-      <button id="importBtn" class="btn">Импорт</button>
-      <input id="importFile" type="file" accept="application/json" style="display:none">
-
-      <button id="resetDay" class="btn btn-danger">Очистить</button>
-      <button id="statsBtn" class="btn" title="Статистика за месяц">📊 Статистика</button>
-      <button id="installBtn" class="btn" title="Установить как приложение" style="display:none">Установить</button>
+      <button class="ctrl" id="refreshBtn">Обновить</button>
+      <button class="ctrl" id="addTextBtn">Добавить текст</button>
+      <button class="ctrl" id="saveBtn">Сохранить</button>
+      <button class="ctrl" id="importBtn">Импорт</button>
+      <input id="importFile" type="file" accept="application/json" style="display:none"/>
     </div>
 
-    <div class="center" id="banquetBar" aria-label="Банкеты"></div>
-
-    <div class="waiters">
-      <div class="w-section">
-        <div class="w-title">1-я смена</div>
-        <div class="w-row" id="rowPrimary"></div>
-      </div>
-      <div class="w-section">
-        <button id="toggleSecondary" class="more-toggle">2-я смена ↓</button>
-        <div class="w-row" id="rowSecondary" style="display:none"></div>
-      </div>
+    <div class="controls">
+      <div class="muted">Банкеты</div>
+      <div id="banquetPanel" class="banquets"></div>
+      <button class="ctrl primary mini" id="addBanquetBtn">Добавить</button>
     </div>
   </div>
 
-  <div class="columns">
-    <div class="col" id="col1"></div>
-    <div class="col" id="col2"></div>
-    <div class="col" id="col3"></div>
+  <!-- КНОПКИ ЗАЛОВ -->
+  <div class="box pad">
+    <div class="muted mini" style="margin-bottom:6px">Залы</div>
+    <div class="halls" id="hallBar"></div>
   </div>
 
-  <!-- шаблоны -->
-  <template id="chipTpl">
-    <div class="chip" tabindex="0">
-      <div class="top">
-        <span class="name"></span>
-        <button class="edit" title="Комментарии">💬</button>
-        <button class="del" title="Удалить">×</button>
-      </div>
-      <div class="note"></div>
-    </div>
-  </template>
+  <!-- ОСНОВНОЙ МАКЕТ -->
+  <div class="main">
+    <div class="left">
+      <div class="box pad">
+        <div class="waiters-head">
+          <div class="w-title">Официанты</div>
+          <button class="ctrl mini" id="addWaiterBtn">Добавить</button>
+        </div>
+        <div class="waiters">
+          <div class="muted mini">Смена 1</div>
+          <div id="wRow1" class="w-row"></div>
 
-  <template id="hallTpl">
-    <details class="panel" open>
-      <summary>
-        <span class="hall-title"></span>
-        <span class="hall-total"></span>
-        <span class="hall-brief"></span>
-      </summary>
-      <div class="pos-grid"></div>
-    </details>
-  </template>
-
-  <template id="posCardTpl">
-    <div class="pos-card">
-      <div class="pos-head">
-        <div class="pos-title"></div>
-        <div class="counter"></div>
+          <button id="toggleShift2" class="toggle">Смена 2</button>
+          <div id="wRow2Wrap" style="display:none;margin-top:6px">
+            <div class="muted mini">Смена 2</div>
+            <div id="wRow2" class="w-row"></div>
+          </div>
+        </div>
       </div>
-      <div class="adder">
-        <select class="pick"><option value="">— выбрать официанта —</option></select>
-        <button class="addBtn">Добавить</button>
-      </div>
-      <div class="slot"></div>
     </div>
-  </template>
 
-  <noscript>
-    <div style="padding:12px;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;margin:8px;border-radius:8px">
-      В вашем браузере отключён JavaScript — страница не будет работать. Включите JavaScript и перезагрузите.
+    <div class="right">
+      <div class="head">
+        <div class="muted">Зоны</div>
+        <div class="count-pill" id="zoneTitle">—</div>
+        <button id="planBtn" class="ctrl mini" style="display:none">Схема</button>
+      </div>
+      <div class="zones" id="zonesBox"></div>
     </div>
-  </noscript>
+  </div>
+</div>
+
+<!-- Модалка -->
+<template id="modalTpl">
+  <div class="modal"><div class="dialog"><div class="pad" id="modalBody"></div></div></div>
+</template>
 
 <script>
 (function(){
 'use strict';
 
-function showOK(){ var el=document.getElementById('okbar'); if(el) el.style.display='block'; }
-
-/* ====== данные ====== */
-const UUID=(crypto&&crypto.randomUUID)?()=>crypto.randomUUID():()=>('id-'+Math.random().toString(36).slice(2));
-const STORAGE_KEY='rota-compact-v13'; /* повысил ключ для «чистого» обновления кода */
+/* ====== Константы / пресеты ====== */
+const STORAGE='rota-mobile-v3';
 const MAX_AGE_DAYS=60;
-const HISTORY_LIMIT=100;
-
-const CHIP_COLORS=[['#E3F2FD','#0b1e4a'],['#FCE7F3','#3e1a36'],['#E8F5E9','#103b1f'],['#FFF3E0','#4a2f0b'],['#F3E8FF','#2e1065'],['#E0F2F1','#083d3b'],['#FFFDE7','#3a3000'],['#F1F5F9','#0f172a'],['#FFE4E6','#4a0b15'],['#EDE7F6','#1f1147']];
-
-const HALL_ICONS={ 'Основной зал':'🏛️','Малый (банкетный) зал':'🪑','ВИП-комнаты':'👑','Веранда':'🌿','Лофт':'🏠','Винная комната':'🍷' };
-const POS_ICONS={
-  'Зона окна':'🪟','5-я линия':'📚','Столы 7, 8, 9':'☕️','Столы 10, 11, 12':'🍽️','Подиум':'🪜',
-  'МБЗ':'🪑','Большой ВИП':'🔥','Малый ВИП':'📚','Каюта':'⚓','Лиенда':'💧','Веранда 1':'🌿','Веранда 2':'🚬','Лофт':'🧱','Винная комната':'🍷'
+const DEFAULT_HALLS={
+  'Основной зал':['Зона окна','5-я линия','Столы 7,8,9','Столы 10,11,12','Подиум'],
+  'Малый (банкетный) зал':['МБЗ'],
+  'ВИП-комнаты':['Большой ВИП','Малый ВИП','Каюта','Лиенда'],
+  'Лофт':['Лофт'],
+  'Веранда':['Веранда 1','Веранда 2'],
+  'Винная комната':['Винная комната']
 };
-
-const CANON_HALLS=[
-  {name:'Основной зал', positions:['Зона окна','5-я линия','Столы 7, 8, 9','Столы 10, 11, 12','Подиум']},
-  {name:'Малый (банкетный) зал', positions:['МБЗ']},
-  {name:'ВИП-комнаты', positions:['Большой ВИП','Малый ВИП','Каюта','Лиенда']},
-  {name:'Веранда', positions:['Веранда 1','Веранда 2']},
-  {name:'Лофт', positions:['Лофт']},
-  {name:'Винная комната', positions:['Винная комната']}
+const SH1=['Элона','Полина','Настя','Виктор','Натали Ч.','Рома','Ксюша'];
+const SH2=['Юля','Игорь','Катя','Наташа В.','Наташа Вел.','Артем','Маша','Инна','Лёша'];
+const BANQUET_TYPES=['ДР','Юбилей','День памяти','Корпоратив','Конференция','Свадьба'];
+const NOTE_PRESETS=[
+  'Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ',
+  'Помощь на Веранде 1','Помощь на Веранде 2',
+  'Доставка','1-ый номер','2-ой номер'
 ];
-const BANQUET_TYPES={'ДР':'🎉 ДР','Свадьба':'💍 Свадьба','Корпоратив':'🏢 Корпоратив','Конференция':'📣 Конференция','День памяти':'🕯️ День памяти','Другой':'🏷️ Другое'};
-const DEFAULT_PRIMARY=['Виктор','Элона','Полина','Наталья Ч.','Настя','Роман'];
-const DEFAULT_SECONDARY=['Игорь','Катя','Юля','Наташа В.','Вова','Маша','Иван','Наташа Величко'];
 
-const $=sel=>document.querySelector(sel);
-function todayISO(){const tz=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-tz).toISOString().slice(0,10);}
-function dateKey(){return $('#date').value || todayISO();}
-function weekdayRU(iso){ const d=new Date(iso+'T00:00'); const w=['вс','пн','вт','ср','чт','пт','сб']; return w[d.getDay()]; }
-function fmtDateRU(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y} (${weekdayRU(iso)})`; }
-function load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;} }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+const $=s=>document.querySelector(s), modalTpl=$('#modalTpl');
 
-/* ====== защита названий банкета ====== */
-function safeBanquetTitle(b){
-  if(!b || !b.type){ return 'Банкет'; }
-  if(b.type === 'Другой'){
-    const t = (b.other || '').trim();
-    return t ? `Другое: ${t}` : 'Другое';
-  }
-  const t = BANQUET_TYPES[b.type];
-  return t || 'Банкет';
-}
+/* ====== Вспомогательные ====== */
+function todayISO(){ const z=(new Date()).getTimezoneOffset()*60000; return new Date(Date.now()-z).toISOString().slice(0,10); }
+function weekday(iso){ const d=new Date(iso+'T00:00'); return ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'][d.getDay()]; }
+function fmtDate(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; }
+function modal(){ const host=modalTpl.content.firstElementChild.cloneNode(true); const body=host.querySelector('#modalBody'); function close(){ host.remove(); } host.addEventListener('click',e=>{ if(e.target===host) close(); }); document.body.appendChild(host); return {el:host,body,close}; }
 
-/* ====== история (Undo/Redo) ====== */
-const history={undo:[], redo:[]};
-function pushHistory(){
-  history.undo.push(JSON.stringify(db));
-  if(history.undo.length>HISTORY_LIMIT) history.undo.shift();
-  history.redo.length=0;
-  updateUndoRedoButtons();
-}
-function undo(){
-  if(!history.undo.length) return;
-  history.redo.push(JSON.stringify(db));
-  const prev=history.undo.pop();
-  db=JSON.parse(prev);
-  save(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
-}
-function redo(){
-  if(!history.redo.length) return;
-  history.undo.push(JSON.stringify(db));
-  const next=history.redo.pop();
-  db=JSON.parse(next);
-  save(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
-}
-function updateUndoRedoButtons(){
-  $('#undoBtn').disabled = history.undo.length===0;
-  $('#redoBtn').disabled = history.redo.length===0;
-}
+/* ====== База ====== */
+function defaultDB(){ return {waiters:{shift1:[...SH1],shift2:[...SH2]}, halls:JSON.parse(JSON.stringify(DEFAULT_HALLS)), data:{}}; }
+let db=load()||defaultDB();
+function load(){ try{return JSON.parse(localStorage.getItem(STORAGE));}catch{return null} }
+function save(){ localStorage.setItem(STORAGE, JSON.stringify(db)); }
+function purgeOld(){ const now=new Date(todayISO()+'T00:00'); const day=86400000; for(const k of Object.keys(db.data)){ const d=new Date(k+'T00:00'); if((now-d)/day>MAX_AGE_DAYS) delete db.data[k]; } }
+purgeOld(); save();
 
-/* ====== очистка старых данных ====== */
-function purgeOldData(){
-  const now = new Date(todayISO()+'T00:00');
-  ['assignments','notes','banquets','shiftSize','hallExtras'].forEach(key=>{
-    const m=db[key]||{};
-    for(const k in m){
-      const d=new Date(k+'T00:00');
-      if((now-d)/(1000*60*60*24) > MAX_AGE_DAYS) delete m[k];
-    }
-  });
-}
+function curDay(){ return $('#date').value||todayISO(); }
+function dayData(){ const k=curDay(); db.data[k] ||= {assign:{},banquets:[],extraText:'',wNotes:{}}; return db.data[k]; }
 
-/* ====== база ====== */
-function buildDB(){
-  const uniq=[...new Set([...DEFAULT_PRIMARY,...DEFAULT_SECONDARY])].map(n=>({id:UUID(),name:n}));
-  return {
-    halls: CANON_HALLS.map(h=>({id:UUID(),name:h.name,positions:h.positions.map(n=>({id:UUID(),name:n}))})),
-    waiters: uniq,
-    metaShifts: { primary:[...DEFAULT_PRIMARY], secondary:[...DEFAULT_SECONDARY] },
-    assignments:{}, notes:{}, banquets:{}, shiftSize:{},
-    hallExtras:{} // date -> hallId -> {hallBanquets:[], sharedWaiter:null}
-  };
-}
-let db = load() || buildDB();
-purgeOldData(); save();
+/* ====== Верх ====== */
+function renderTop(){ const iso=curDay(); $('#wday').innerHTML=`${weekday(iso)}<br>${fmtDate(iso)}.`; }
 
-/* ====== маппинг и extras ====== */
-function hallsByName(){return Object.fromEntries(db.halls.map(h=>[h.name,h]));}
-function dayAss(){const k=dateKey(); if(!db.assignments[k]) db.assignments[k]={}; return db.assignments[k];}
-function ensureSlot(hid,pid){const a=dayAss(); if(!a[hid]) a[hid]={}; if(!Array.isArray(a[hid][pid])) a[hid][pid]=[]; return a[hid][pid];}
-function notesForDay(){const k=dateKey(); if(!db.notes[k]) db.notes[k]={}; return db.notes[k];}
-function getNotes(wid){const m=notesForDay(); return m[wid]||(m[wid]=[])}
-function addNote(wid,t){pushHistory(); const a=getNotes(wid); if(!a.includes(t)) a.push(t); save()}
-function delNote(wid,i){pushHistory(); const a=getNotes(wid); a.splice(i,1); save()}
-function waiterById(id){return db.waiters.find(w=>w.id===id)}
-function waiterIdByName(name){return db.waiters.find(w=>w.name===name)?.id}
-function colorForWaiter(id){const i=Math.max(0, db.waiters.findIndex(w=>w.id===id)); const [bg,fg]=CHIP_COLORS[i%CHIP_COLORS.length]; return {bg,fg}}
-function banquetsForDay(){const k=dateKey(); if(!db.banquets[k]) db.banquets[k]=[]; return db.banquets[k];}
-function banquetById(id){return banquetsForDay().find(b=>b.id===id)}
-function uniqueWaitersAll(){
-  const ass=dayAss(); const ids=new Set();
-  for(const hid in ass){ for(const pid in ass[hid]){ (ass[hid][pid]||[]).forEach(e=>{ if(e.k==='w') ids.add(e.id); }); } }
-  const extras = hallExtrasForDay();
-  for(const hid in extras){ const ex = extras[hid]; if(ex && ex.sharedWaiter) ids.add(ex.sharedWaiter); }
-  return ids;
-}
+/* ====== Залы/зоны ====== */
+let currentHall='Основной зал';
+function renderHalls(){ const bar=$('#hallBar'); bar.innerHTML=''; Object.keys(db.halls).forEach(h=>{ const b=document.createElement('button'); b.className='hall-btn'; b.textContent=h; if(h===currentHall) b.classList.add('active'); b.onclick=()=>{ currentHall=h; renderHalls(); renderZones(); }; bar.appendChild(b); }); }
+function ensureHallZone(h,z){ const d=dayData(); d.assign[h] ||= {}; d.assign[h][z] ||= []; return d.assign[h][z]; }
 
-/* extras */
-function hallExtrasForDay(){ const k=dateKey(); if(!db.hallExtras[k]) db.hallExtras[k]={}; return db.hallExtras[k]; }
-function getHallExtra(hid){ const map=hallExtrasForDay(); if(!map[hid]) map[hid]={hallBanquets:[], sharedWaiter:null}; return map[hid]; }
-function addHallBanquet(hid,bid){ pushHistory(); const ex=getHallExtra(hid); if(!ex.hallBanquets.includes(bid)) ex.hallBanquets.push(bid); save(); }
-function removeHallBanquet(hid,bid){ pushHistory(); const ex=getHallExtra(hid); ex.hallBanquets = ex.hallBanquets.filter(x=>x!==bid); save(); }
-function setSharedWaiter(hid,wid){ pushHistory(); const ex=getHallExtra(hid); ex.sharedWaiter = wid || null; save(); }
+function renderZones(){
+  $('#zoneTitle').textContent=currentHall;
+  const planBtn=$('#planBtn'); planBtn.style.display=(currentHall==='Основной зал')?'inline-block':'none';
 
-/* ====== шаблоны ====== */
-const chipTpl=document.getElementById('chipTpl');
-const hallTpl=document.getElementById('hallTpl');
-const posCardTpl=document.getElementById('posCardTpl');
-
-let selected=null; // {k:'w'|'b', id}
-
-/* ====== счётчик ====== */
-function renderShiftBadge(){
-  const n = uniqueWaitersAll().size;
-  db.shiftSize[dateKey()] = n; save();
-  $('#shiftBadge').textContent = `👥 В смене: ${n}`;
-}
-
-/* ====== официанты ====== */
-function renderWaiterChip(w, isSecondary=false){
-  const chip=chipTpl.content.firstElementChild.cloneNode(true);
-  chip.querySelector('.name').textContent=w.name;
-  chip.querySelector('.note').textContent=getNotes(w.id).join(', ');
-  const {bg,fg}=colorForWaiter(w.id);
-  chip.style.background=bg; chip.style.color=fg; chip.style.borderColor=bg;
-
-  if(selected && selected.k==='w' && selected.id===w.id) chip.classList.add('active');
-
-  chip.addEventListener('click',e=>{
-    if(e.target.closest('.edit')||e.target.closest('.del')) return;
-    selected=(selected && selected.k==='w' && selected.id===w.id)?null:{k:'w',id:w.id};
-    renderBanquetBar(); renderWaiters();
-  },{passive:true});
-
-  chip.querySelector('.edit').addEventListener('click',e=>{
-    e.stopPropagation(); openCommentsModal(w.id, w.name);
-  });
-
-  chip.querySelector('.del').addEventListener('click',e=>{
-    e.stopPropagation();
-    if(!confirm(`Удалить «${w.name}»?`)) return;
-    pushHistory();
-    for(const day in db.assignments){
-      const halls=db.assignments[day];
-      for(const hid in halls){ for(const pid in halls[hid]){ halls[hid][pid]=(halls[hid][pid]||[]).filter(x=>!(x.k==='w'&&x.id===w.id)); } }
-    }
-    for(const day in db.notes){ if(db.notes[day]) delete db.notes[day][w.id]; }
-    db.waiters=db.waiters.filter(x=>x.id!==w.id);
-    db.metaShifts.primary=db.metaShifts.primary.filter(n=>n!==w.name);
-    db.metaShifts.secondary=db.metaShifts.secondary.filter(n=>n!==w.name);
-    for(const day in db.hallExtras){
-      const m=db.hallExtras[day]||{};
-      for(const hid in m){ if(m[hid] && m[hid].sharedWaiter===w.id) m[hid].sharedWaiter=null; }
-    }
-    if(selected && selected.k==='w' && selected.id===w.id) selected=null;
-    save(); renderAll();
-  });
-
-  chip.dataset.secondary = isSecondary ? '1' : '0';
-  return chip;
-}
-function renderWaiters(){
-  const rowP=$('#rowPrimary'), rowS=$('#rowSecondary');
-  rowP.innerHTML=''; rowS.innerHTML='';
-
-  db.waiters.forEach(w=>{
-    if(!db.metaShifts.primary.includes(w.name) && !db.metaShifts.secondary.includes(w.name)){
-      db.metaShifts.primary.push(w.name);
-    }
-  });
-
-  const map=Object.fromEntries(db.waiters.map(w=>[w.name,w]));
-  db.metaShifts.primary.forEach(n=>{ const w=map[n]; if(w) rowP.appendChild(renderWaiterChip(w,false)); });
-  db.metaShifts.secondary.forEach(n=>{ const w=map[n]; if(w) rowS.appendChild(renderWaiterChip(w,true)); });
-
-  save();
-}
-
-/* ====== банкеты (верхняя панель) ====== */
-function renderBanquetBar(){
-  const bar=$('#banquetBar'); bar.innerHTML='';
-  const addBtn=document.createElement('button'); addBtn.className='b-chip'; addBtn.textContent='+ Банкет';
-  addBtn.onclick=()=>openBanquetModal(); bar.appendChild(addBtn);
-
-  const arr = banquetsForDay();
-  arr.forEach(b=>{
-    const chip=document.createElement('div'); chip.className='b-chip';
-    if(selected&&selected.k==='b'&&selected.id===b.id) chip.classList.add('active');
-    chip.appendChild(document.createTextNode(`${safeBanquetTitle(b)} · ${b.people}`));
-
-    const actions=document.createElement('span'); actions.className='b-actions';
-    const edit=document.createElement('button'); edit.className='icon-btn'; edit.textContent='✏️';
-    const del=document.createElement('button'); del.className='icon-btn'; del.textContent='🗑';
-    edit.onclick=(e)=>{e.stopPropagation(); openBanquetModal(b);};
-    del.onclick=(e)=>{e.stopPropagation(); deleteBanquet(b.id);};
-
-    actions.appendChild(edit); actions.appendChild(del);
-    chip.appendChild(actions);
-
-    chip.addEventListener('click',()=>{
-      selected=(selected&&selected.k==='b'&&selected.id===b.id)?null:{k:'b',id:b.id};
-      renderBanquetBar();
-    },{passive:true});
-
-    bar.appendChild(chip);
-  });
-}
-function deleteBanquet(id){
-  pushHistory();
-  const arr=banquetsForDay();
-  const i=arr.findIndex(x=>x.id===id);
-  if(i>-1) arr.splice(i,1);
-
-  const ass=dayAss();
-  for(const hid in ass){
-    for(const pid in ass[hid]){
-      ass[hid][pid] = (ass[hid][pid]||[]).filter(x=>!(x.k==='b' && x.id===id));
-    }
-  }
-  const extras=hallExtrasForDay();
-  for(const hid in extras){
-    if(extras[hid]){
-      extras[hid].hallBanquets = (extras[hid].hallBanquets||[]).filter(bid=>bid!==id);
-    }
-  }
-
-  if(selected && selected.k==='b' && selected.id===id) selected=null;
-
-  save();
-  renderAll();
-  requestAnimationFrame(()=>renderAll());
-}
-
-/* ====== колонки ====== */
-const hallBriefEls=new Map(), hallTotalEls=new Map();
-function renderColumns(){
-  const c1=$('#col1'), c2=$('#col2'), c3=$('#col3');
-  c1.innerHTML=''; c2.innerHTML=''; c3.innerHTML='';
-  hallBriefEls.clear(); hallTotalEls.clear();
-  const map=hallsByName();
-  try{ mountHall(map['Основной зал'], c1); }catch(e){ console.error('Основной зал:',e); }
-  try{ mountHall(map['Малый (банкетный) зал'], c1); }catch(e){ console.error('МБЗ:',e); }
-  try{ mountHall(map['ВИП-комнаты'], c2); }catch(e){ console.error('ВИП:',e); }
-  try{ mountHall(map['Лофт'], c2); }catch(e){ console.error('Лофт:',e); }
-  try{ mountHall(map['Веранда'], c3); }catch(e){ console.error('Веранда:',e); }
-  try{ mountHall(map['Винная комната'], c3); }catch(e){ console.error('Винная:',e); }
-  updateAllHallTotals(); renderShiftBadge();
-}
-function mountHall(h,into){
-  if(!h || !into) return;
-  const sec=hallTpl.content.firstElementChild.cloneNode(true);
-  sec.dataset.hid=h.id;
-  sec.querySelector('.hall-title').textContent=(HALL_ICONS[h.name]||'')+' '+h.name;
-  const totalEl=sec.querySelector('.hall-total'); hallTotalEls.set(h.id,totalEl);
-  const briefEl=sec.querySelector('.hall-brief'); hallBriefEls.set(h.id, briefEl);
-  const grid=sec.querySelector('.pos-grid');
-
-  const tools=document.createElement('div'); tools.className='hall-tools';
-
-  if(h.name==='Основной зал'){
-    const addHallB=document.createElement('button');
-    addHallB.className='btn mini';
-    addHallB.textContent='🏛️🎉 + Банкет для всего зала';
-    addHallB.onclick=()=>openBanquetModal(null, {hallWide:h.id});
-    tools.appendChild(addHallB);
-
-    const ex=getHallExtra(h.id);
-    (ex.hallBanquets||[]).forEach(bid=>{
-      const b=banquetById(bid); if(!b) return;
-      const pill=document.createElement('span'); pill.className='hall-pill';
-      const title=safeBanquetTitle(b);
-      pill.innerHTML=`<span class="tag">ВЕСЬ ЗАЛ</span> ${title} · ${b.people}`;
-      const x=document.createElement('button'); x.className='x'; x.textContent='×';
-      x.onclick=()=>{ removeHallBanquet(h.id,bid); save(); renderAll(); requestAnimationFrame(()=>renderAll()); };
-      pill.appendChild(x);
-      tools.appendChild(pill);
-    });
-  }
-
-  if(h.name==='ВИП-комнаты'){
-    const ex=getHallExtra(h.id);
-    const wrap=document.createElement('div'); wrap.className='hall-pill';
-    const sel=document.createElement('select');
-    sel.innerHTML='<option value="">— общий официант ВИП —</option>';
-    db.waiters.forEach(w=>{ const o=document.createElement('option'); o.value=w.id; o.textContent=w.name; sel.appendChild(o); });
-    const btnSet=document.createElement('button'); btnSet.className='btn mini'; btnSet.textContent='Установить';
-    btnSet.onclick=()=>{ if(sel.value){ setSharedWaiter(h.id, sel.value); renderColumns(); renderShiftBadge(); } };
-    const btnClr=document.createElement('button'); btnClr.className='btn mini'; btnClr.textContent='Убрать';
-    btnClr.onclick=()=>{ setSharedWaiter(h.id, null); renderColumns(); renderShiftBadge(); };
-
-    wrap.prepend(document.createTextNode('👑👤 '));
-    wrap.appendChild(sel); wrap.appendChild(btnSet); wrap.appendChild(btnClr);
-    if(ex.sharedWaiter){
-      const w=waiterById(ex.sharedWaiter);
-      const tag=document.createElement('span'); tag.className='tag'; tag.textContent = w? `Общий: ${w.name}` : 'Общий: —';
-      wrap.appendChild(tag);
-    }
-    tools.appendChild(wrap);
-  }
-
-  if(tools.childNodes.length) sec.insertBefore(tools, grid);
-
-  h.positions.forEach(p=>{
-    const card=posCardTpl.content.firstElementChild.cloneNode(true);
-    card.querySelector('.pos-title').textContent=(POS_ICONS[p.name]||'')+' '+p.name;
-    const counter=card.querySelector('.counter');
-    const slot=card.querySelector('.slot');
-    const pick=card.querySelector('.pick');
-    const addBtn=card.querySelector('.addBtn');
-    fillPick(pick);
+  const box=$('#zonesBox'); box.innerHTML='';
+  (db.halls[currentHall]||[]).forEach(z=>{
+    const wrap=document.createElement('div'); wrap.className='zone';
+    const head=document.createElement('div'); head.className='zhead'; head.innerHTML=`<strong>${z}</strong>`;
+    wrap.appendChild(head);
+    const slot=document.createElement('div'); slot.className='slot'; wrap.appendChild(slot);
 
     const draw=()=>{
-      const arr=ensureSlot(h.id,p.id);
       slot.innerHTML='';
-
-      if(h.name==='ВИП-комнаты'){
-        const sw=getHallExtra(h.id).sharedWaiter;
-        if(sw){
-          const w=waiterById(sw); if(w){
-            const {bg,fg}=colorForWaiter(sw);
-            const el=renderAssign(w.name, getNotes(sw), bg, fg, null);
-            el.querySelector('.x')?.remove();
-            slot.appendChild(el);
-          }
-        }
-      }
-
-      arr.forEach(ent=>{
-        if(ent.k==='w'){
-          const w=waiterById(ent.id); if(!w) return;
-          const {bg,fg}=colorForWaiter(ent.id);
-          const el=renderAssign(w.name, getNotes(ent.id), bg, fg, ()=>{ removeEnt(h.id,p.id,ent); draw(); });
-          slot.appendChild(el);
-        }else{
-          const b=banquetById(ent.id); if(!b) return;
-          const title=safeBanquetTitle(b);
-          const label=`${title} · ${b.people}`;
-          const el=renderAssign(label, b.note? [b.note] : [], '#fff', '#0f172a', ()=>{ removeEnt(h.id,p.id,ent); draw(); });
-          slot.appendChild(el);
-        }
+      const arr=ensureHallZone(currentHall,z);
+      arr.forEach((e,i)=>{
+        const item=document.createElement('div'); item.className='assign';
+        const row=document.createElement('div'); row.className='row1';
+        if(e.t==='w'){ row.innerHTML=`<span class="nm">${e.name}</span> <button class="x" title="Удалить">×</button>`; }
+        else { row.innerHTML=`<span class="nm">Банкет</span> <button class="x" title="Удалить">×</button>`; }
+        const note = (e.t==='w') ? (dayData().wNotes[e.name]||'') : '';
+        const under=document.createElement('div'); under.className='small'; under.textContent=note;
+        item.appendChild(row); if(note) item.appendChild(under);
+        row.querySelector('.x').onclick=()=>{ arr.splice(i,1); save(); draw(); updateShiftBadge(); };
+        slot.appendChild(item);
       });
-
-      const ids=new Set(arr.filter(e=>e.k==='w').map(e=>e.id));
-      if(h.name==='ВИП-комнаты' && getHallExtra(h.id).sharedWaiter) ids.add(getHallExtra(h.id).sharedWaiter);
-      counter.textContent=String(ids.size);
-
-      refreshHallBrief(h.id); renderShiftBadge();
     };
-
-    function assign(hid,pid,ent){
-      pushHistory();
-      const arr=ensureSlot(hid,pid);
-      if(arr.some(x=>x.k===ent.k && x.id===ent.id)) return;
-      if(ent.k==='w'){
-        const w=waiterById(ent.id);
-        if(db.metaShifts.secondary.includes(w.name)){
-          const tags=getNotes(ent.id); if(!tags.includes('Усиление')) addNote(ent.id,'Усиление');
-        }
-      }
-      arr.push(ent); save(); draw();
-    }
-    function removeEnt(hid,pid,ent){
-      pushHistory();
-      const arr=ensureSlot(hid,pid); const i=arr.findIndex(x=>x.k===ent.k && x.id===ent.id);
-      if(i>-1) arr.splice(i,1); save();
-    }
-
-    card.addEventListener('click',e=>{
-      if(e.target.closest('.adder')||e.target.closest('.assign')) return;
-      if(!selected) return;
-      assign(h.id,p.id, selected);
-    });
-    addBtn.addEventListener('click',e=>{
-      e.stopPropagation();
-      const wid=pick.value; if(!wid) return;
-      assign(h.id,p.id,{k:'w',id:wid}); pick.value='';
-    });
-
     draw();
-    grid.appendChild(card);
-  });
 
-  into.appendChild(sec);
-}
-function refreshHallBrief(hid){
-  const briefEl=hallBriefEls.get(hid); if(!briefEl) return;
-  const hall=db.halls.find(x=>x.id===hid); if(!hall){ briefEl.textContent=''; briefEl.classList.remove('has'); return; }
-  const ass=dayAss();
-  const parts=[], countsByPos=[];
-  const ex=getHallExtra(hid);
-
-  if(ex.hallBanquets && ex.hallBanquets.length){
-    const list = ex.hallBanquets.map(bid=>{
-      const b=banquetById(bid); if(!b) return null;
-      const title=safeBanquetTitle(b);
-      return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
-    }).filter(Boolean);
-    if(list.length) parts.push(`Банкет (весь зал): ${list.join(' | ')}`);
-  }
-
-  if(ex.sharedWaiter){
-    const w=waiterById(ex.sharedWaiter);
-    if(w && hall.name==='ВИП-комнаты') parts.push(`Общий: ${w.name}`);
-  }
-
-  (hall.positions||[]).forEach(p=>{
-    const arr=(ass[hid]&&ass[hid][p.id])||[];
-    if(!arr.length) return;
-    const people = arr.map(e=>{
-      if(e.k==='w'){
-        const w=waiterById(e.id); if(!w) return '—';
-        const cm=getNotes(e.id); return w.name + (cm.length? ` (${cm.join(', ')})` : '');
-      }else{
-        const b=banquetById(e.id); if(!b) return 'Банкет';
-        const title=safeBanquetTitle(b);
-        return `${title} · ${b.people}`+(b.note?` (${b.note})`:'');
+    wrap.addEventListener('click',()=>{
+      if(!selected) return;
+      const arr=ensureHallZone(currentHall,z);
+      if(selected.kind==='w'){
+        if(!arr.some(x=>x.t==='w'&&x.name===selected.name)){ arr.push({t:'w',name:selected.name}); }
+      }else if(selected.kind==='b'){
+        if(!arr.some(x=>x.t==='b'&&x.id===selected.id)){ arr.push({t:'b',id:selected.id}); const b=dayData().banquets.find(x=>x.id===selected.id); if(b){ b.place={hall:currentHall,zone:z}; } }
       }
+      save(); draw(); updateShiftBadge();
     });
-    parts.push(`${p.name}: ${people.join(', ')}`);
-    const uniq = new Set(arr.filter(e=>e.k==='w').map(e=>e.id));
-    if(hall.name==='ВИП-комнаты' && getHallExtra(hid).sharedWaiter) uniq.add(getHallExtra(hid).sharedWaiter);
-    countsByPos.push(`${uniq.size} на ${p.name}`);
+
+    box.appendChild(wrap);
   });
-
-  const has=parts.length>0;
-  briefEl.textContent = has ? parts.join(' • ') : '';
-  briefEl.classList.toggle('has', has);
-
-  const totalEl=hallTotalEls.get(hid);
-  if(totalEl){
-    const all = [];
-    (hall.positions||[]).forEach(p=>{
-      const arr=(ass[hid]&&ass[hid][p.id])||[];
-      arr.filter(e=>e.k==='w').forEach(e=>all.push(e.id));
-    });
-    if(hall.name==='ВИП-комнаты' && getHallExtra(hid).sharedWaiter) all.push(getHallExtra(hid).sharedWaiter);
-    const uniq = new Set(all);
-    totalEl.textContent = uniq.size ? (countsByPos.join(', ') + ` — Всего: ${uniq.size}`) : '';
-  }
 }
-function updateAllHallTotals(){ db.halls.forEach(h=> refreshHallBrief(h.id)); }
 
-/* ====== элемент в позиции ====== */
-function renderAssign(name, notesArr, bg, fg, onRemove){
-  const el=document.createElement('div'); el.className='assign';
-  if(bg){ el.style.background=bg; el.style.borderColor=bg; }
-  if(fg){ el.style.color=fg; }
-  const top=document.createElement('div'); top.className='top';
+/* схема */
+$('#planBtn').addEventListener('click',()=>{ const host=modal(); host.body.innerHTML=`<div class="muted mini" style="margin-bottom:6px">Схема: Основной зал</div><img src="oz-scheme.png" alt="Схема" style="max-width:92vw;max-height:82vh;display:block"/><div class="row" style="justify-content:flex-end;margin-top:8px"><a class="ctrl mini" href="oz-scheme.png" target="_blank" rel="noopener">Открыть</a><button class="ctrl mini" id="c">Закрыть</button></div>`; host.body.querySelector('#c').onclick=host.close; });
+
+/* ====== Официанты (выбор, удаление, комментарии) ====== */
+let selected=null; // {kind:'w'|'b', name?, id?}
+
+function waiterChip(name){
+  const note=dayData().wNotes[name]||'';
+  const chip=document.createElement('div'); chip.className='wchip'; if(selected&&selected.kind==='w'&&selected.name===name) chip.classList.add('active');
+
+  const main=document.createElement('div'); main.className='w-main';
   const nm=document.createElement('div'); nm.className='w-name'; nm.textContent=name;
-  const x=document.createElement('button'); x.className='x'; x.title='Убрать'; x.textContent='×';
-  if(onRemove){ x.onclick=(e)=>{ e.stopPropagation(); onRemove(); renderShiftBadge(); }; } else { x.remove(); }
-  top.appendChild(nm); top.appendChild(x);
-  const note=document.createElement('div'); note.className='w-note';
-  note.textContent = (notesArr && notesArr.length) ? notesArr.join(', ') : '';
-  el.appendChild(top); el.appendChild(note);
-  return el;
-}
+  const tools=document.createElement('div'); tools.className='w-tools';
+  const edit=document.createElement('button'); edit.className='iconbtn'; edit.title='Комментарий'; edit.textContent='✎';
+  const del=document.createElement('button'); del.className='iconbtn'; del.title='Удалить имя'; del.textContent='×';
+  tools.append(edit,del); main.append(nm,tools);
 
-/* ====== комментарии ====== */
-function openCommentsModal(wid, wname){
-  const presets=['Помощь на веранде 1','Помощь на веранде 2','Помощь в ОЗ','Помощь на ВИПах','Помощь в МБЗ','Первый номер на банкете','Второй номер на банкете','Усиление'];
-  const wrap=document.createElement('div'); wrap.className='modal';
-  wrap.innerHTML = '<div class="dialog">'+
-    '<div style="font-weight:900">Комментарии — '+wname+'</div>'+
-    '<div id="presetBox" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
-    '<div id="tagList" style="display:flex;flex-wrap:wrap;gap:6px"></div>'+
-    '<div class="row"><label>Новый</label><input id="cInp" placeholder="например: до 18:00"/></div>'+
-    '<div class="row" style="justify-content:flex-end"><button id="cAdd" class="btn btn-acc">Добавить</button><button id="cClose">Закрыть</button></div>'+
-  '</div>';
-  document.body.appendChild(wrap);
+  const sub=document.createElement('div'); sub.className='w-note'; sub.textContent=note;
 
-  const box=wrap.querySelector('#presetBox'), list=wrap.querySelector('#tagList'), inp=wrap.querySelector('#cInp');
-  function redraw(){
-    list.innerHTML='';
-    getNotes(wid).forEach((t,i)=>{
-      const tag=document.createElement('span');
-      tag.style.cssText='font-size:11px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:6px';
-      const x=document.createElement('b'); x.textContent='×'; x.style.cssText='cursor:pointer;color:#991b1b';
-      x.onclick=()=>{ delNote(wid,i); redraw(); renderAll(); };
-      tag.appendChild(document.createTextNode(t)); tag.appendChild(x); list.appendChild(tag);
-    });
-  }
-  presets.forEach(p=>{
-    const b=document.createElement('button'); b.textContent=p; b.className='btn';
-    b.style.cssText='border:1px dashed #cbd5e1;border-radius:999px;padding:4px 8px;background:#fff;font-size:11px';
-    b.onclick=()=>{ const cur=getNotes(wid); const i=cur.indexOf(p); if(i===-1) addNote(wid,p); else delNote(wid,i); redraw(); renderAll(); };
-    box.appendChild(b);
-  });
-  wrap.querySelector('#cAdd').onclick=()=>{ const v=(inp.value||'').trim(); if(!v) return; addNote(wid,v); inp.value=''; redraw(); renderAll(); };
-  wrap.querySelector('#cClose').onclick=()=>wrap.remove();
-  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
-  redraw();
-}
+  chip.append(main, sub);
 
-/* ====== банкет: модалка с выбором места и hall-wide ====== */
-function openBanquetModal(existing, opts){
-  const isEdit=!!existing;
-  const hallWideId = opts && opts.hallWide ? String(opts.hallWide) : null;
-  const wrap=document.createElement('div'); wrap.className='modal';
+  chip.addEventListener('click',(e)=>{ if(e.target===edit||e.target===del) return; selected = (selected&&selected.kind==='w'&&selected.name===name)?null:{kind:'w',name}; highlightWaiters(); });
 
-  const placeOptions = db.halls.map(h=>{
-    const opts = h.positions.map(p=>`<option value="${h.id}|${p.id}">${h.name} — ${p.name}</option>`).join('');
-    return `<optgroup label="${h.name}">${opts}</optgroup>`;
-  }).join('');
+  edit.addEventListener('click',(e)=>{ e.stopPropagation(); editNoteModal(name); });
 
-  wrap.innerHTML = '<div class="dialog">'+
-    `<div style="font-weight:900">${isEdit?'Изменить банкет':'Новый банкет'}</div>`+
-    '<div class="row"><label>Кол-во персон</label><input id="bnPeople" type="number" min="1" inputmode="numeric" placeholder="25"/></div>'+
-    '<div class="row"><label>Вид</label><select id="bnType"><option>ДР</option><option>Свадьба</option><option>Корпоратив</option><option>Конференция</option><option>День памяти</option><option>Другой</option></select></div>'+
-    '<div class="row" id="bnOtherRow" style="display:none"><label>Другой</label><input id="bnOther"/></div>'+
-    '<div class="row"><label>Комментарий</label><textarea id="bnNote" rows="3" placeholder="Пожелания, тайминг..."></textarea></div>'+
-    `<div class="row"><label>Место</label><select id="bnPlace"><option value="">— не выбирать —</option>${placeOptions}</select></div>`+
-    (hallWideId? '<div class="weak" style="margin-top:-4px">Назначение: <b>весь Основной зал</b></div>' : '')+
-    `<div class="row" style="justify-content:flex-end"><button id="bnSave" class="btn btn-acc">${isEdit?'Сохранить':'Добавить'}</button><button id="bnClose">Закрыть</button></div>`+
-  '</div>';
-
-  document.body.appendChild(wrap);
-  const people=wrap.querySelector('#bnPeople'), type=wrap.querySelector('#bnType'),
-        otherRow=wrap.querySelector('#bnOtherRow'), other=wrap.querySelector('#bnOther'),
-        note=wrap.querySelector('#bnNote'), place=wrap.querySelector('#bnPlace');
-
-  type.onchange=()=>{ otherRow.style.display=(type.value==='Другой')?'flex':'none'; };
-  if(isEdit){
-    people.value=existing.people; type.value=existing.type; note.value=existing.note||'';
-    if(existing.type==='Другой'){ otherRow.style.display='flex'; if(other) other.value=existing.other||''; }
-  }
-
-  wrap.querySelector('#bnSave').onclick=()=>{
-    const n=parseInt(people.value,10); if(!(n>0)) return alert('Укажите число персон.');
-    pushHistory();
-    let b;
-    if(isEdit){
-      existing.people=n; existing.type=type.value; existing.other=(other&&other.value||'').trim(); existing.note=(note.value||'').trim();
-      b=existing;
-    } else {
-      b={id:UUID(), people:n, type:type.value, other:(other&&other.value||'').trim(), note:(note.value||'').trim()};
-      banquetsForDay().push(b);
-    }
-
-    if(hallWideId){ addHallBanquet(hallWideId, b.id); }
-
-    if(place.value){
-      const [hid,pid]=String(place.value).split('|');
-      const arr=ensureSlot(hid,pid);
-      if(!arr.some(x=>x.k==='b'&&x.id===b.id)){ arr.push({k:'b',id:b.id}); }
-    }
-
-    save();
-    selected=null;
-    renderAll();
-    requestAnimationFrame(()=>renderAll());
-    wrap.remove();
-  };
-  wrap.querySelector('#bnClose').onclick=()=>wrap.remove();
-  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
-}
-
-/* ====== служебные ====== */
-function fillPick(selectEl){
-  selectEl.innerHTML='<option value="">— выбрать официанта —</option>';
-  db.waiters.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; selectEl.appendChild(opt); });
-}
-function renderShiftAndTotals(){ updateAllHallTotals(); renderShiftBadge(); }
-
-/* ====== экспорт отчёта ====== */
-function exportTextWhatsApp(){
-  const iso = dateKey();
-  const n = uniqueWaitersAll().size;
-  const lines = [
-    'Добрый день, друзья!',
-    `📅 ${fmtDateRU(iso)}`,
-    `В смене ${n} человек. 🕺`,
-    ''
-  ];
-  const b = banquetsForDay();
-  if(b.length===0){
-    lines.push('Банкеты: 0', '');
-  }else{
-    const list = b.map(x=>{
-      const title = safeBanquetTitle(x);
-      return `${title} · ${x.people}` + (x.note?` (${x.note})`:'');
-    }).join(' | ');
-    lines.push('Банкеты: '+list, '');
-  }
-
-  const ass=dayAss();
-  db.halls.forEach(h=>{
-    const ex=getHallExtra(h.id);
-    const hasHallWide = ex.hallBanquets && ex.hallBanquets.length>0;
-    const hasShared = !!ex.sharedWaiter && h.name==='ВИП-комнаты';
-    const hasAnyPos = (h.positions||[]).some(p=> (ass[h.id]&&ass[h.id][p.id]||[]).length>0 );
-    if(!hasHallWide && !hasShared && !hasAnyPos) return;
-
-    lines.push(`${(HALL_ICONS[h.name]||'')} *${h.name}*:`);
-
-    if(hasHallWide && h.name==='Основной зал'){
-      const text = ex.hallBanquets.map(bid=>{
-        const x=banquetById(bid); if(!x) return null;
-        const title=safeBanquetTitle(x);
-        return `${title} · ${x.people}` + (x.note?` (${x.note})`:'');
-      }).filter(Boolean).join(' | ');
-      if(text) lines.push(`• Банкет (весь зал): ${text}`);
-    }
-
-    if(hasShared){
-      const w=waiterById(ex.sharedWaiter);
-      if(w) lines.push(`• Общий официант: ${w.name}`);
-    }
-
-    h.positions.forEach(p=>{
-      const arr=(ass[h.id]&&ass[h.id][p.id])||[];
-      if(!arr.length && !(hasShared && h.name==='ВИП-комнаты')) return;
-      const list=[];
-      if(hasShared && h.name==='ВИП-комнаты'){
-        const w=waiterById(ex.sharedWaiter);
-        if(w){
-          const cm=getNotes(w.id);
-          list.push(cm.length? `${w.name} _(${cm.join(', ')})_` : w.name);
-        }
-      }
-      arr.forEach(e=>{
-        if(e.k==='w'){
-          const w=waiterById(e.id); const cm=getNotes(e.id);
-          list.push(w ? (cm.length? `${w.name} _(${cm.join(', ')})_` : w.name) : '—');
-        }else{
-          const x=banquetById(e.id); if(!x) return;
-          const title=safeBanquetTitle(x);
-          list.push(x.note ? `${title} · ${x.people} _(${x.note})_` : `${title} · ${x.people}`);
-        }
+  del.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    if(!confirm(`Удалить "${name}" и убрать из зон?`)) return;
+    // убрать из списков
+    db.waiters.shift1 = db.waiters.shift1.filter(n=>n!==name);
+    db.waiters.shift2 = db.waiters.shift2.filter(n=>n!==name);
+    // убрать из назначений текущего дня
+    const d=dayData();
+    Object.values(d.assign).forEach(zmap=>{
+      Object.keys(zmap).forEach(z=>{
+        zmap[z]=zmap[z].filter(e=>!(e.t==='w'&&e.name===name));
       });
-      if(list.length) lines.push(`• ${(POS_ICONS[p.name]||'')} ${p.name}: ${list.join(' | ')}`);
     });
-    lines.push('');
+    delete d.wNotes[name];
+    if(selected&&selected.kind==='w'&&selected.name===name) selected=null;
+    save(); renderWaiters(); renderZones(); updateShiftBadge();
   });
 
-  lines.push('Всем хорошей смены и больших чаевых! 💵');
+  return chip;
+}
+
+function renderWaiters(){
+  const row1=$('#wRow1'), row2=$('#wRow2');
+  row1.innerHTML=''; row2.innerHTML='';
+  db.waiters.shift1.forEach(n=>row1.appendChild(waiterChip(n)));
+  db.waiters.shift2.forEach(n=>row2.appendChild(waiterChip(n)));
+}
+function highlightWaiters(){
+  document.querySelectorAll('.wchip').forEach(el=>{
+    const name=el.querySelector('.w-name')?.textContent||'';
+    if(selected && selected.kind==='w' && selected.name===name) el.classList.add('active'); else el.classList.remove('active');
+  });
+}
+
+/* комментарий для имени */
+function editNoteModal(name){
+  const host=modal();
+  const d=dayData();
+  const cur=d.wNotes[name]||'';
+  host.body.innerHTML=`
+    <div class="muted mini" style="margin-bottom:6px">Комментарий для: <strong>${name}</strong></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      ${NOTE_PRESETS.map(t=>`<button class="ctrl mini preset">${t}</button>`).join('')}
+    </div>
+    <div class="row" style="gap:6px;align-items:flex-end">
+      <div style="flex:1">
+        <div class="muted mini">Свой комментарий</div>
+        <input id="own" class="ctrl" placeholder="Текст..." value="${cur.replace(/"/g,'&quot;')}"/>
+      </div>
+      <button id="ok" class="ctrl primary">OK</button>
+      <button id="clr" class="ctrl">Очистить</button>
+    </div>`;
+  host.body.querySelectorAll('.preset').forEach(btn=>{
+    btn.onclick=()=>{ d.wNotes[name]=btn.textContent; save(); renderWaiters(); renderZones(); host.close(); };
+  });
+  host.body.querySelector('#ok').onclick=()=>{ d.wNotes[name]=host.body.querySelector('#own').value.trim(); save(); renderWaiters(); renderZones(); host.close(); };
+  host.body.querySelector('#clr').onclick=()=>{ delete d.wNotes[name]; save(); renderWaiters(); renderZones(); host.close(); };
+}
+
+/* добавить имя */
+function addWaiterModal(){
+  const host=modal();
+  host.body.innerHTML=`
+    <div class="row" style="gap:6px;align-items:flex-end">
+      <div style="flex:1">
+        <div class="muted mini">Имя</div>
+        <input id="nm" class="ctrl" placeholder="Например: Павел"/>
+      </div>
+      <div>
+        <div class="muted mini">Смена</div>
+        <select id="sh" class="ctrl"><option value="1">1-я</option><option value="2">2-я</option></select>
+      </div>
+      <button id="go" class="ctrl primary">Добавить</button>
+      <button id="cl" class="ctrl">Отмена</button>
+    </div>`;
+  host.body.querySelector('#go').onclick=()=>{
+    const nm=(host.body.querySelector('#nm').value||'').trim(); const sh=host.body.querySelector('#sh').value;
+    if(!nm) return alert('Введите имя');
+    if(db.waiters.shift1.includes(nm)||db.waiters.shift2.includes(nm)) return alert('Такое имя уже есть');
+    if(sh==='1') db.waiters.shift1.push(nm); else db.waiters.shift2.push(nm);
+    save(); renderWaiters(); host.close();
+  };
+  host.body.querySelector('#cl').onclick=host.close;
+}
+
+/* ====== Банкеты (как было) ====== */
+function banquetTitle(id){ const b=dayData().banquets.find(x=>x.id===id); if(!b) return 'Банкет'; const place=b.place?(b.place.zone?`${b.place.hall} — ${b.place.zone}`:b.place.hall):'—'; return `${b.type}, ${b.people} чел, ${place}${b.note?`, ${b.note}`:''}`; }
+function renderBanquets(){ const p=$('#banquetPanel'); p.innerHTML=''; dayData().banquets.forEach(b=>{ const chip=document.createElement('span'); chip.className='b-chip'; chip.textContent=banquetTitle(b.id); chip.onclick=()=>{ selected=(selected&&selected.kind==='b'&&selected.id===b.id)?null:{kind:'b',id:b.id}; highlightWaiters(); }; const x=document.createElement('button'); x.className='x'; x.title='Удалить'; x.textContent='×'; x.onclick=(ev)=>{ ev.stopPropagation(); const d=dayData(); Object.values(d.assign).forEach(zmap=>{ Object.keys(zmap).forEach(z=>{ zmap[z]=(zmap[z]||[]).filter(e=>!(e.t==='b'&&e.id===b.id)); }); }); d.banquets=d.banquets.filter(x=>x.id!==b.id); save(); renderBanquets(); renderZones(); }; chip.appendChild(x); p.appendChild(chip); }); }
+function addBanquetModal(){
+  const host=modal(); const halls=Object.keys(db.halls); const hallOpts=halls.map(h=>`<option>${h}</option>`).join('');
+  host.body.innerHTML=`
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <div><div class="muted mini">Мероприятие</div><select id="type" class="ctrl">${BANQUET_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      <div><div class="muted mini">Кол-во</div><input id="peo" class="ctrl" type="number" min="1" inputmode="numeric" placeholder="25"/></div>
+      <div><div class="muted mini">Зал</div><select id="hall" class="ctrl">${hallOpts}</select></div>
+      <div><div class="muted mini">Зона</div><select id="zone" class="ctrl"></select></div>
+      <div style="flex:1 1 100%"><div class="muted mini">Комментарий</div><input id="note" class="ctrl" placeholder="Пожелания, тайминг..."/></div>
+      <div class="row" style="gap:8px;margin-top:4px"><button id="ok" class="ctrl primary">Добавить</button><button id="cl" class="ctrl">Отмена</button></div>
+    </div>`;
+  const hallSel=host.body.querySelector('#hall'), zoneSel=host.body.querySelector('#zone');
+  function fill(){ zoneSel.innerHTML=''; (db.halls[hallSel.value]||[]).forEach(z=>{ const o=document.createElement('option'); o.textContent=z; zoneSel.appendChild(o); }); }
+  hallSel.onchange=fill; fill();
+  host.body.querySelector('#ok').onclick=()=>{ const t=host.body.querySelector('#type').value; const p=parseInt(host.body.querySelector('#peo').value||'0',10); const note=host.body.querySelector('#note').value.trim(); const hall=hallSel.value; const zone=zoneSel.value; if(!(p>0)) return alert('Укажите количество человек'); const id='b'+Math.random().toString(36).slice(2); const rec={id,type:t,people:p,note,place:{hall,zone}}; const d=dayData(); d.banquets.push(rec); d.assign[hall] ||= {}; d.assign[hall][zone] ||= []; if(!d.assign[hall][zone].some(x=>x.t==='b'&&x.id===id)) d.assign[hall][zone].push({t:'b',id}); save(); renderBanquets(); renderZones(); host.close(); };
+  host.body.querySelector('#cl').onclick=host.close;
+}
+
+/* ====== Экспорт/Импорт/WA ====== */
+function buildMessage(){
+  const iso=curDay(), d=dayData(), lines=[];
+  lines.push('Добрый день, друзья!'); lines.push(`${fmtDate(iso)} (${weekday(iso)})`);
+  lines.push(`В смене ${countUniqueAssigned()} человек. 🕺`);
+  if(d.banquets.length===0) lines.push('Банкеты: 0');
+  else{ lines.push('Банкеты:'); d.banquets.forEach(b=>lines.push(`• ${banquetTitle(b.id)}`)); }
+  Object.keys(d.assign).forEach(h=>{
+    const zones=d.assign[h]; const non=Object.keys(zones).filter(z=>(zones[z]||[]).length>0);
+    if(!non.length) return; lines.push(''); lines.push(`*${h}*`);
+    non.forEach(z=>{ const arr=zones[z]; const text=arr.map(e=> e.t==='w' ? (e.name+(d.wNotes[e.name]?` (${d.wNotes[e.name]})`:'')) : 'Банкет').join(', '); lines.push(`• ${z}: ${text}`); });
+  });
+  const extra=d.extraText; if(extra){ lines.push(''); lines.push(extra); }
+  lines.push(''); lines.push('Всем хорошей смены и больших чаевых! 💵');
   return lines.join('\n');
 }
-function exportTextTelegram(){ return exportTextWhatsApp(); }
-function exportTextEmail(){ return exportTextWhatsApp(); }
+function sendWhatsApp(){ const txt=buildMessage(); const app='whatsapp://send?text='+encodeURIComponent(txt); const web='https://wa.me/?text='+encodeURIComponent(txt); const a=document.createElement('a'); a.href=app; document.body.appendChild(a); a.click(); setTimeout(()=>{ window.open(web,'_blank'); a.remove(); },300); }
+function saveToFile(){ const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`rota-${curDay()}.json`; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0); }
+function importFromFile(file){ const r=new FileReader(); r.onload=()=>{ try{ const obj=JSON.parse(r.result); if(obj&&obj.waiters&&obj.halls&&obj.data){ db=obj; purgeOld(); save(); renderAll(); alert('Импортирован полный бэкап.'); return; } if(obj&&(obj.assign||obj.banquets||obj.extraText!==undefined||obj.wNotes)){ const k=curDay(); db.data[k]={assign:obj.assign||{},banquets:obj.banquets||[],extraText:obj.extraText||'',wNotes:obj.wNotes||{}}; purgeOld(); save(); renderAll(); alert('Импортированы данные текущего дня.'); return; } alert('Неизвестный формат JSON.'); }catch(e){ alert('Ошибка импорта: '+e.message); } }; r.readAsText(file); }
 
-/* ====== Экспорт/Импорт базы ====== */
-function exportDB(){
-  const dataStr = JSON.stringify(db, null, 2);
-  const blob = new Blob([dataStr], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const stamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  a.href=url; a.download=`rota-backup-${stamp}.json`;
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-}
-function importDB(file){
-  const reader=new FileReader();
-  reader.onload = ()=>{
-    try{
-      const obj=JSON.parse(reader.result);
-      if(!obj || !obj.halls || !obj.waiters || !obj.assignments) throw new Error('Неверный формат файла');
-      pushHistory();
-      db = obj;
-      purgeOldData(); save(); renderAll(); renderShiftAndTotals();
-      alert('Импорт завершён');
-    }catch(e){
-      alert('Ошибка импорта: '+e.message);
-    }
-  };
-  reader.readAsText(file);
-}
+/* ====== Счётчик людей ====== */
+function countUniqueAssigned(){ const d=dayData(); const used=new Set(); Object.values(d.assign).forEach(zmap=>{ Object.values(zmap).forEach(arr=>{ arr.filter(x=>x.t==='w').forEach(x=>{ used.add(x.name); }); }); }); return used.size; }
+function updateShiftBadge(){ $('#shiftBadge').textContent=`В смене: ${countUniqueAssigned()}`; }
 
-/* ====== сброс дня ====== */
-function resetCurrentDate(){
-  pushHistory();
-  const k=dateKey();
-  db.assignments[k]={};
-  db.notes[k]={};
-  db.banquets[k]=[];
-  delete db.shiftSize[k];
-  if(db.hallExtras[k]) delete db.hallExtras[k];
-  save();
-}
-
-/* ====== статистика ====== */
-function openStatsModal(){
-  const end = new Date(dateKey()+'T00:00');
-  const start = new Date(end); start.setDate(end.getDate()-29);
-  const within=(iso)=>{ const d=new Date(iso+'T00:00'); return d>=start && d<=end; };
-
-  const counts = {};
-  Object.keys(db.assignments).filter(within).forEach(iso=>{
-    const halls=db.assignments[iso]||{};
-    for(const hid in halls){
-      for(const pid in halls[hid]){
-        (halls[hid][pid]||[]).forEach(e=>{
-          if(e.k!=='w') return;
-          counts[e.id] ||= {shifts:new Set(), byHall:{}};
-          counts[e.id].shifts.add(iso);
-          counts[e.id].byHall[hid] = (counts[e.id].byHall[hid]||0)+1;
-        });
-      }
-    }
-  });
-
-  const wrap=document.createElement('div'); wrap.className='modal';
-  const rows = Object.keys(counts).map(wid=>{
-    const w=waiterById(wid); const hBy=counts[wid].byHall;
-    const total=counts[wid].shifts.size;
-    const top = Object.entries(hBy)
-      .map(([hid,c])=>({name:db.halls.find(h=>h.id===hid)?.name||'?', c}))
-      .sort((a,b)=>b.c-a.c).slice(0,3)
-      .map(x=>x.name.replace(/ \(.*?\)/,'')).join(', ');
-    return `<tr><td>${w?.name||'?'}</td><td style="text-align:center">${total}</td><td>${top||'—'}</td></tr>`;
-  }).sort((a,b)=> a.localeCompare(b)).join('');
-
-  wrap.innerHTML='<div class="dialog">'+
-    '<div style="font-weight:900">📊 Статистика за 30 дней</div>'+
-    `<div style="font-size:11px;color:#475569;margin-top:-4px">Период: ${start.toLocaleDateString('ru-RU')} — ${end.toLocaleDateString('ru-RU')}</div>`+
-    '<div style="max-height:60vh;overflow:auto;margin-top:6px">'+
-      '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
-        '<thead><tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 2px">Официант</th><th style="text-align:center;border-bottom:1px solid #e5e7eb;padding:6px 2px">Смен</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 2px">Чаще в залах</th></tr></thead>'+
-        `<tbody>${rows || '<tr><td colspan="3" style="padding:8px;color:#64748b">Нет данных за период</td></tr>'}</tbody>`+
-      '</table>'+
-    '</div>'+
-    '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px"><button id="stClose">Закрыть</button></div>'+
-  '</div>';
-  document.body.appendChild(wrap);
-  wrap.querySelector('#stClose').onclick=()=>wrap.remove();
-  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
-}
-
-/* ====== рендер всего ====== */
-function renderAll(){
-  renderBanquetBar();
-  renderWaiters();
-  renderColumns();
-}
-
-/* ====== PWA ====== */
-let deferredPrompt=null;
-function registerSW(){
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  }
-}
-window.addEventListener('beforeinstallprompt', (e)=>{
-  e.preventDefault();
-  deferredPrompt=e;
-  const b=$('#installBtn'); if(b) b.style.display='inline-block';
-});
-function installApp(){
-  if(!deferredPrompt) return;
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.finally(()=>{ deferredPrompt=null; $('#installBtn').style.display='none'; });
-}
-
-/* ====== init ====== */
-document.addEventListener('DOMContentLoaded', function(){
-  showOK(); registerSW();
-
-  const dateEl=document.getElementById('date');
-  dateEl.value = dateEl.value || todayISO();
+/* ====== Инициализация ====== */
+function renderAll(){ renderTop(); renderHalls(); renderZones(); renderWaiters(); renderBanquets(); updateShiftBadge(); }
+document.addEventListener('DOMContentLoaded',()=>{
+  const dEl=$('#date'); dEl.value=dEl.value||todayISO(); dEl.onchange=()=>{ renderAll(); save(); };
   renderAll();
-  renderShiftAndTotals();
-  updateUndoRedoButtons();
-
-  dateEl.addEventListener('change', ()=>{ renderAll(); renderShiftAndTotals(); });
-
-  document.getElementById('toggleSecondary').addEventListener('click',()=>{
-    const rowS=$('#rowSecondary'); const open=rowS.style.display==='none';
-    rowS.style.display=open?'grid':'none';
-    document.getElementById('toggleSecondary').textContent=open?'2-я смена ↑':'2-я смена ↓';
-  });
-
-  document.getElementById('addWaiter').addEventListener('click',()=>{
-    const wrap=document.createElement('div'); wrap.className='modal';
-    wrap.innerHTML='<div class="dialog">'+
-      '<div style="font-weight:900">Новый официант</div>'+
-      '<div class="row"><label>Имя</label><input id="wName" placeholder="например: Павел"/></div>'+
-      '<div class="row"><label>Смена</label><select id="wShift"><option value="1">1-я смена</option><option value="2">2-я смена</option></select></div>'+
-      '<div class="row" style="justify-content:flex-end"><button id="wSave" class="btn btn-acc">Добавить</button><button id="wClose">Отмена</button></div>'+
-    '</div>';
-    document.body.appendChild(wrap);
-    const input=wrap.querySelector('#wName'), sel=wrap.querySelector('#wShift');
-    wrap.querySelector('#wSave').onclick=()=>{
-      const name=(input.value||'').trim(); if(!name) return;
-      if(db.waiters.some(w=>w.name.toLowerCase()===name.toLowerCase())) return alert('Такое имя уже существует.');
-      pushHistory();
-      const w={id:UUID(), name};
-      db.waiters.push(w);
-      if(sel.value==='2'){
-        db.metaShifts.secondary.push(name);
-        db.metaShifts.primary = db.metaShifts.primary.filter(n=>n!==name);
-      }else{
-        db.metaShifts.primary.push(name);
-        db.metaShifts.secondary = db.metaShifts.secondary.filter(n=>n!==name);
-      }
-      save(); renderAll(); wrap.remove();
-    };
-    wrap.querySelector('#wClose').onclick=()=>wrap.remove();
-    wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
-    setTimeout(()=>input.focus(),0);
-  });
-
-  document.getElementById('undoBtn').addEventListener('click', undo);
-  document.getElementById('redoBtn').addEventListener('click', redo);
-
-  document.getElementById('exportBtn').addEventListener('click', exportDB);
-  document.getElementById('importBtn').addEventListener('click', ()=> $('#importFile').click() );
-  document.getElementById('importFile').addEventListener('change', (e)=>{
-    const f=e.target.files && e.target.files[0];
-    if(f) importDB(f);
-    e.target.value='';
-  });
-
-  document.getElementById('copy').addEventListener('click', async ()=>{
-    const txt=exportTextWhatsApp(); try{ await navigator.clipboard.writeText(txt); alert('Скопировано'); }catch(e){ alert('Скопируйте вручную:\n\n'+txt); }
-  });
-  document.getElementById('shareWA').addEventListener('click', ()=>{
-    const text = exportTextWhatsApp();
-    const urlWeb = 'https://wa.me/?text=' + encodeURIComponent(text);
-    const urlApp = 'whatsapp://send?text=' + encodeURIComponent(text);
-    const a = document.createElement('a'); a.href=urlApp; document.body.appendChild(a); a.click();
-    setTimeout(()=>{ window.open(urlWeb, '_blank'); a.remove(); }, 300);
-  });
-  document.getElementById('shareTG').addEventListener('click', ()=>{
-    const text = exportTextTelegram();
-    const url = 'https://t.me/share/url?text=' + encodeURIComponent(text);
-    window.open(url, '_blank');
-  });
-  document.getElementById('shareMail').addEventListener('click', ()=>{
-    const text = exportTextEmail();
-    const subj = 'Распределение — ' + fmtDateRU(dateKey());
-    const url = 'mailto:?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(text);
-    window.location.href = url;
-  });
-
-  document.getElementById('resetDay').addEventListener('click',()=>{
-    if(!confirm('Очистить все данные на выбранную дату?')) return;
-    resetCurrentDate(); renderAll(); renderShiftAndTotals(); updateUndoRedoButtons();
-  });
-
-  document.getElementById('statsBtn').addEventListener('click', openStatsModal);
-
-  document.getElementById('installBtn').addEventListener('click', installApp);
+  $('#toggleShift2').onclick=()=>{ const w=$('#wRow2Wrap'); w.style.display=(w.style.display==='none')?'block':'none'; };
+  $('#addWaiterBtn').onclick=addWaiterModal;
+  $('#addBanquetBtn').onclick=addBanquetModal;
+  $('#sendBtn').onclick=sendWhatsApp;
+  $('#addTextBtn').onclick=()=>{ const host=modal(); host.body.innerHTML=`<div class="muted mini" style="margin-bottom:6px">Добавить текст в конец сообщения</div><textarea id="x" class="ctrl" rows="4" style="width:100%">${dayData().extraText||''}</textarea><div class="row" style="gap:8px;margin-top:6px"><button id="ok" class="ctrl primary">OK</button><button id="cl" class="ctrl">Отмена</button></div>`; host.body.querySelector('#ok').onclick=()=>{ dayData().extraText=host.body.querySelector('#x').value||''; save(); host.close(); }; host.body.querySelector('#cl').onclick=host.close; };
+  $('#saveBtn').onclick=saveToFile;
+  $('#refreshBtn').onclick=()=>location.reload();
+  $('#resetBtn').onclick=()=>{ if(!confirm('Очистить всю информацию за выбранный день?')) return; const k=curDay(); db.data[k]={assign:{},banquets:[],extraText:'',wNotes:{}}; save(); renderAll(); };
+  const fileInput=$('#importFile'); $('#importBtn').onclick=()=>fileInput.click(); fileInput.onchange=(e)=>{ const f=e.target.files&&e.target.files[0]; if(f) importFromFile(f); e.target.value=''; };
 });
 })();
 </script>
