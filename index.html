@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 <title>Распределение — мобильная</title>
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest.json">
 <meta name="theme-color" content="#ffe9c4">
 
 <!-- Важно для iOS A2HS -->
@@ -111,11 +111,13 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const scope = "/roma-pwa/";
-    navigator.serviceWorker.register(scope + 'sw.js', { scope })
-      .catch(console.warn);
+    const scope = (location.pathname.endsWith('/')
+      ? location.pathname
+      : location.pathname.replace(/[^/]+$/, ''));
+    navigator.serviceWorker.register(scope + 'sw.js', { scope }).catch(console.warn);
   });
 }
+</script>
 </script>
 <body>
 <div class="wrap">
