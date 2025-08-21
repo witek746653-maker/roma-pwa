@@ -1,13 +1,31 @@
 {
-  "name": "Распределение официантов",
-  "short_name": "Распред.",
-  "start_url": "./",        // важно: относительно текущей папки репозитория
+  "name": "Roma PWA",
+  "short_name": "Roma",
+  "description": "Интерактивное приложение для распределения официантов",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#ffe9c4",
   "theme_color": "#ffe9c4",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
+
